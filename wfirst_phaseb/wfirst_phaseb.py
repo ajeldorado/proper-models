@@ -181,7 +181,7 @@ def wfirst_phaseb( lambda_m, output_dim, PASSVALUE={'dummy':0} ):
     if 'PASSVALUE' in locals():
         if 'lam0' in PASSVALUE: lamba0_m = PASSVALUE['lam0'] * 1.0e-6
         if 'lambda0_m' in PASSVALUE: lambda0_m = PASSVALUE['lambda0_m']
-        mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * np.pi * 2.363e6) * 1000    # mas per lambda0/D
+        mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * np.pi * 2.363) * 1000    # mas per lambda0/D
         if 'source_x_offset' in PASSVALUE: source_x_offset = PASSVALUE['source_x_offset']
         if 'source_y_offset' in PASSVALUE: source_y_offset = PASSVALUE['source_y_offset']
         if 'source_x_offset_mas' in PASSVALUE: source_x_offset = PASSVALUE['source_x_offset_mas'] / mas_per_lamD

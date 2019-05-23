@@ -158,7 +158,7 @@ endelse
 if ( n_elements(optval) ne 0 ) then begin
 	if ( tag_exists('lam0',optval) ) then lambda0_m = optval.lam0 * 1.0e-6
 	if ( tag_exists('lambda0_m',optval) ) then lambda0_m = optval.lambda0_m
-	mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * !dpi * 2.363e6) * 1000	;-- mas per lambda0/D
+	mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * !dpi * 2.363) * 1000	;-- mas per lambda0/D
 	if ( tag_exists('source_x_offset',optval) ) then source_x_offset = optval.source_x_offset 
 	if ( tag_exists('source_y_offset',optval) ) then source_y_offset = optval.source_y_offset 
 	if ( tag_exists('source_x_offset_mas',optval) ) then source_x_offset = optval.source_x_offset_mas / mas_per_lamD 

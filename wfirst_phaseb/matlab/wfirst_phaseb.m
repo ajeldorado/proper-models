@@ -231,7 +231,7 @@ else
     return
 end
 
-mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * pi * 2.363e6) * 1000;	% mas per lambda0/D
+mas_per_lamD = lambda0_m * 360.0 * 3600.0 / (2 * pi * 2.363) * 1000;	% mas per lambda0/D
 
 if(exist('optval','var')==1) %if exist('optval')
     if ( isfield(optval,'lam0') );           lambda0_m = optval.lam0 * 1.0e-6;end
