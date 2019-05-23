@@ -1,9 +1,19 @@
 %  3/14/2019, Hanying Zhou  
+%  2019-05-23, A.J. Riggs
 clear all
-% addpath('/home/hanying/afta_im/properMatlab2/proper_v3.0c_matlab_4jun18')
+% % addpath('/home/hanying/afta_im/properMatlab2/proper_v3.0c_matlab_4jun18')
+% addpath('~/Documents/MATLAB/PROPER');
+% addpath(genpath('/Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/'))
+% cd /Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/
+
+clear all
+
+restoredefaultpath
+
+optval.phaseb_dir = '/Users/ajriggs/Repos/proper-models/wfirst_phaseb/';
 addpath('~/Documents/MATLAB/PROPER');
-addpath(genpath('/Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/'))
-cd /Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/
+addpath(genpath(optval.phaseb_dir))
+cd(optval.phaseb_dir)
 
 testcase = 1;%3;  % 1 -hlc; 2- hlc_erkin; 3 -spc-ifs (long); 4- ifs_short;  5-spc_wide; 
 
@@ -42,7 +52,7 @@ if nlam ==1  bw = 0; lam_array =lambda0; end
 
 % 1. offaxis, compact  psf pk for normalizing factor; 
 % EE0 = prop_run_multi(['wfirst_phaseb_v2_compact' ], lam_array, npsf, 'quiet', 'passvalue',optval );
-EE0 = prop_run(['wfirst_phaseb_v2_compact' ], lambda0, npsf, 'quiet', 'passvalue',optval );
+EE0 = prop_run(['wfirst_phaseb_compact' ], lambda0, npsf, 'quiet', 'passvalue',optval );
 
 optval.source_x_offset =0;
 optval.zindex = 4;
@@ -52,19 +62,19 @@ optval.polaxis =-2;
 
 % 2. full model, for regular psf 
 % EE = prop_run_multi(['wfirst_phaseb_v2'], lam_array, npsf, 'quiet', 'passvalue',optval );
-EE = prop_run(['wfirst_phaseb_v2'], lambda0, npsf, 'quiet', 'passvalue',optval );
+EE = prop_run(['wfirst_phaseb'], lambda0, npsf, 'quiet', 'passvalue',optval );
 
 
 % 3. full model, for field
 
 optval.end_at_fpm_exit_pupil =1;
-optval.output_field_rootname = ['fld_at_xtPup'];
+optval.output_field_rootname = [optval.phaseb_dir filesep 'fld' filesep  'fld_at_xtPup'];
 optval.use_fpm=0;
 optval.use_hlc_dm_patterns=0;
 nout = 512; 			% nout > pupil_diam_pix
 if testcase >2; nout =1024; end % >= pupil_daim_pix; 
 % fld = prop_run_multi(['wfirst_phaseb_v2'], lam_array, nout, 'quiet', 'passvalue',optval );
-fld = prop_run(['wfirst_phaseb_v2'], lambda0, nout, 'quiet', 'passvalue',optval );
+fld = prop_run(['wfirst_phaseb'], lambda0, nout, 'quiet', 'passvalue',optval );
 
 
 % 4. compact, for psf; use field input from full
@@ -73,12 +83,12 @@ fld = prop_run(['wfirst_phaseb_v2'], lambda0, nout, 'quiet', 'passvalue',optval 
 
 optval.use_fpm= 1;
 optval.use_hlc_dm_patterns= 1;
-optval.input_field_rootname = ['fld_at_xtPup'];
+optval.input_field_rootname = [optval.phaseb_dir filesep 'fld' filesep 'fld_at_xtPup'];
 optval.zindex = 0;
 optval.zval_m = 0;
     
 % Ee= prop_run_multi(['wfirst_phaseb_v2_compact'], lam_array, npsf, 'quiet', 'passvalue',optval ); 
-Ee= prop_run(['wfirst_phaseb_v2_compact'], lambda0, npsf, 'quiet', 'passvalue',optval ); 
+Ee= prop_run(['wfirst_phaseb_compact'], lambda0, npsf, 'quiet', 'passvalue',optval ); 
     
 
 max_psf0 = max(max(sum(abs(EE0).^2,3)))/nlam;

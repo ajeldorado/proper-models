@@ -1,9 +1,13 @@
 %  3/14/2019, Hanying Zhou  
 clear all
-% addpath('/home/hanying/afta_im/properMatlab2/proper_v3.0c_matlab_4jun18')
+
+restoredefaultpath
+
+optval.phaseb_dir = fileparts('/Users/ajriggs/Repos/proper-models/wfirst_phaseb/'); %--fileparts.m removes the trailing slash
 addpath('~/Documents/MATLAB/PROPER');
-addpath(genpath('/Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/'))
-cd /Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/
+addpath(genpath(optval.phaseb_dir))
+cd(optval.phaseb_dir)
+
 
 testcase = 1;  % 1 -hlc; 2- hlc_erkin;
 
@@ -26,7 +30,7 @@ lam_array = [(1-bw/2):bw/(nlam-mod(nlam,2)):(1+bw/2)]*lambda0;
 
     
 % 1. offaxis compact psf pk for normalizing factor
-EE0 = prop_run_multi(['wfirst_phaseb_v2_compact'  ], lam_array, npsf, 'quiet', 'passvalue',optval );
+EE0 = prop_run_multi(['wfirst_phaseb_compact'  ], lam_array, npsf, 'quiet', 'passvalue',optval );
 
 optval.source_x_offset =0;
 optval.fpm_axis ='p';
@@ -34,12 +38,12 @@ optval.zindex = 4;
 optval.zval_m = 0.19e-9;
 
 % 2. pol p
-Ep = prop_run_multi(['wfirst_phaseb_v2' ], lam_array, npsf, 'quiet', 'passvalue',optval );
+Ep = prop_run_multi(['wfirst_phaseb' ], lam_array, npsf, 'quiet', 'passvalue',optval );
 
 
 % 3. pol s
 optval.fpm_axis ='s';
-Es = prop_run_multi(['wfirst_phaseb_v2' ], lam_array, npsf, 'quiet', 'passvalue',optval );
+Es = prop_run_multi(['wfirst_phaseb' ], lam_array, npsf, 'quiet', 'passvalue',optval );
 
 
 max_psf0 = max(max(sum(abs(EE0).^2,3)))/nlam;

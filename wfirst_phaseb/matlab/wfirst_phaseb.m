@@ -379,10 +379,10 @@ n = n_default;	% start off with less padding
 wavefront = prop_begin(diam,lambda_m, n,'beam_diam_fraction', pupil_diam_pix/n);%
 
 pupil =fitsread( pupil_file);
-wavefront = prop_multiply(wavefront, falco_pad(pupil,n));
+wavefront = prop_multiply(wavefront, custom_pad(pupil,n));
 clear pupil; %pupil = 0;
 
-if ( polaxis ~= 0 );  wavefront =  wfirst_polmap(wavefront, polfile, pupil_diam_pix, polaxis,lambda_m); end
+if ( polaxis ~= 0 );  wavefront =  polmap(wavefront, polfile, pupil_diam_pix, polaxis,lambda_m); end
 
 wavefront = prop_define_entrance(wavefront);
 
@@ -480,7 +480,7 @@ if ( use_dm1 );   wavefront = prop_dm(wavefront, dm1_m, dm1_xc_act, dm1_yc_act, 
 if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb_DM1_phase_error_V1.0.fits'], 'wavefront');end
 if ( contains(cor_type,'hlc')  && use_hlc_dm_patterns ) %if ( ~isempty(strfind(cor_type,'hlc'))  && use_hlc_dm_patterns ),
     dm1wfe = fitsread( [prefix 'dm1wfe.fits']);
-    wavefront = prop_add_phase(wavefront, falco_pad(dm1wfe, n));
+    wavefront = prop_add_phase(wavefront, custom_pad(dm1wfe, n));
     clear dm1wfe %dm1wfe = 0;
 end
 
@@ -490,11 +490,11 @@ if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb
 if ( contains(cor_type,'hlc')  ) %if ( strfind(cor_type,'hlc')  )
     if ( use_hlc_dm_patterns )
         dm2wfe =fitsread( [prefix 'dm2wfe.fits']);
-        wavefront = prop_add_phase(wavefront, falco_pad(dm2wfe, n));
+        wavefront = prop_add_phase(wavefront, custom_pad(dm2wfe, n));
         clear dm2wfe %dm2wfe = 0;
     end
     dm2mask=fitsread( [prefix 'dm2mask.fits']);
-    wavefront = prop_multiply(wavefront, falco_pad(dm2mask, n));
+    wavefront = prop_multiply(wavefront, custom_pad(dm2mask, n));
     clear dm2mask %dm2mask = 0;
 end
 
@@ -514,7 +514,7 @@ if ( use_aperture );   wavefront = prop_circular_aperture(wavefront, diam_oap4/2
 
 wavefront = prop_propagate(wavefront, d_oap4_pupilmask,'surface_name', 'PUPIL_MASK');	% flat/reflective shaped pupil
 if ( contains(cor_type,'spc') && ~end_at_fpm_exit_pupil ) %if ( ~isempty(strfind(cor_type,'spc') ) && ~end_at_fpm_exit_pupil )
-    pupil_mask = falco_pad(fitsread( pupil_mask_file),n);
+    pupil_mask = custom_pad(fitsread( pupil_mask_file),n);
     
     if ( mask_x_shift_pupdiam ~=0 || mask_y_shift_pupdiam ~=0  || mask_x_shift_m ~=0 || mask_y_shift_m ~=0)
         %shift SP mask by FFTing it, applying tilt, and FFTing back
@@ -528,7 +528,7 @@ if ( contains(cor_type,'spc') && ~end_at_fpm_exit_pupil ) %if ( ~isempty(strfind
         clear x tilt %x=0; tilt =0;
     end
     
-    wavefront = prop_multiply(wavefront, falco_pad(pupil_mask,n));
+    wavefront = prop_multiply(wavefront, custom_pad(pupil_mask,n));
     clear pupil_mask %pupil_mask = 0;
     
 end
@@ -538,7 +538,7 @@ if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb
 diam = 2 * prop_get_beamradius(wavefront);
 wavefront = prop_end(wavefront, 'noabs');
 n = n_to_fpm;
-wavefront0 = falco_pad(wavefront,n);
+wavefront0 = custom_pad(wavefront,n);
 wavefront = prop_begin(diam, lambda_m, n, 'beam_diam_fraction', pupil_diam_pix/n);
 wavefront.wf = prop_shift_center(wavefront0);
 clear wavefront0 %wavefront0 = 0;
@@ -569,13 +569,13 @@ if ( use_fpm )
         occ = occ.*exp(-1j*angle(occ(1,1))); %--Standardize the phase of the masks to be 0 for the outer glass part.
         %if strcmp(cor_type,'hlc') occ = shift2d(imrotate(occ, 180),1,1); end
         if strcmpi(cor_type,'hlc'); occ = circshift(rot90(occ, 2),[1,1]); end
-        wavefront = prop_multiply(wavefront, falco_pad(occ,n));
+        wavefront = prop_multiply(wavefront, custom_pad(occ,n));
         clear occ %occ = 0;
     elseif ( contains(cor_type,'spc')  )%elseif ( strfind(cor_type,'spc')  )
         % super-sample FPM
-        wavefront0 = falco_pad(ifftshift(fft2(wavefront.wf)), n_mft);  % to virtual pupil
+        wavefront0 = custom_pad(ifftshift(fft2(wavefront.wf)), n_mft);  % to virtual pupil
         fpm = fitsread( fpm_file);
-        fpm = falco_pad(fpm, size(fpm,1)+mod(size(fpm,1),2)); % make it even; otherwise the phase part is incorrect
+        fpm = custom_pad(fpm, size(fpm,1)+mod(size(fpm,1),2)); % make it even; otherwise the phase part is incorrect
         nfpm = size(fpm,1);
         fpm_sampling_lam = fpm_sampling_lam0 * lambda0_m / lambda_m;
         wavefront0 = mft2(wavefront0, fpm_sampling_lam, pupil_diam_pix, nfpm, -1); % MFT to highly-sampled focal plane
@@ -601,7 +601,7 @@ if ( pinhole_diam_m ~=0 )
     m_per_lamD = dx_m * n / pupil_diam_pix;         % current focal plane sampling in lambda_m/D
     dx_pinhole_lamD = dx_pinhole_diam_m /m_per_lamD;% pinhole sampling in lambda_m/D
     n_in = round(pupil_diam_pix * 1.2);
-    wavefront0 = falco_pad( fftshift(fft2(ifftshift(wavefront.wf))),n_in);
+    wavefront0 = custom_pad( fftshift(fft2(ifftshift(wavefront.wf))),n_in);
     wavefront0 = mft2( wavefront0, dx_pinhole_lamD, pupil_diam_pix, n_out, -1 );		% MFT to highly-sampled focal plane
     p = (radius(n_out,n_out) .* dx_pinhole_diam_m) <= pinhole_diam_m/2.0;
     wavefront0 = wavefront0 .* p;
@@ -621,13 +621,13 @@ diam = 2 * prop_get_beamradius(wavefront);
 [wavefront, sampling_m ]= prop_end(wavefront,  'noabs');
 
 n = n_from_lyotstop;
-wavefront = falco_pad(wavefront,n);
+wavefront = custom_pad(wavefront,n);
 wavefront0 = wavefront;
 
 if  ~isempty(output_field_rootname)
     lams = num2str(lambda_m*1e6, '%6.4f');
     pols = ['polaxis'   num2str(polaxis,2)];
-    wavefront = falco_pad(wavefront, output_dim); %
+    wavefront = custom_pad(wavefront, output_dim); %
     fitswrite(real(wavefront), [output_field_rootname '_' lams 'um_' pols '_real.fits']);
     fitswrite(imag(wavefront), [output_field_rootname '_' lams 'um_' pols '_imag.fits']);
 end
@@ -635,7 +635,7 @@ end
 if ( end_at_fpm_exit_pupil )
     if getWFE
         pupil = fitsread( pupil_file);
-        wavefront = falco_pad(wavefront.*falco_pad(pupil,n), pupil_diam_pix); % if to get wfe
+        wavefront = custom_pad(wavefront.*custom_pad(pupil,n), pupil_diam_pix); % if to get wfe
     end
     return
 end
@@ -657,7 +657,7 @@ if ( use_lyot_stop )
         wavefront.wf = fft2( ifft2(wavefront.wf).*ifftshift(exp(tilt)) );
     end
     lyot =fitsread( lyot_stop_file);
-    wavefront = prop_multiply(wavefront, falco_pad(lyot,n));
+    wavefront = prop_multiply(wavefront, custom_pad(lyot,n));
     clear lyot %lyot = 0;
     if ( lyot_x_shift_pupdiam ~=0 || lyot_y_shift_pupdiam ~=0 )
         wavefront.wf = fft2( ifft2(wavefront.wf).*ifftshift(exp(-tilt)) );
@@ -739,7 +739,7 @@ if ( final_sampling_lam0 ~=0 || final_sampling_m ~=0)
     end
     wavefront = prop_magnify( wavefront, mag, 'size_out',output_dim,'amp_conserve');
 else
-    wavefront = falco_pad(wavefront, output_dim);
+    wavefront = custom_pad(wavefront, output_dim);
 end
 
 return

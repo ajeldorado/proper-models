@@ -1,18 +1,20 @@
 %  3/14/2019, Hanying Zhou  
+%  2019-05-23, A.J. Riggs
 
 clear all
-% addpath('/home/hanying/afta_im/properMatlab2/proper_v3.0c_matlab_4jun18')
+
+restoredefaultpath
+
+optval.phaseb_dir = fileparts('/Users/ajriggs/Repos/proper-models/wfirst_phaseb/'); %--fileparts.m removes the trailing slash
 addpath('~/Documents/MATLAB/PROPER');
-addpath(genpath('/Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/'))
-cd /Users/ajriggs/Documents/Sim/cgi/wfirst_phaseb/
+addpath(genpath(optval.phaseb_dir))
+cd(optval.phaseb_dir)
 
-delete(gcp('nocreate'))
-
-testcase = 3;%1;  % 1 -hlc; 2- hlc_erkin; 3 -spc-ifs (short); 4- ifs_short;  5-spc_wide; 
+testcase = 1;  % 1 -hlc; 2- hlc_erkin; 3 -spc-ifs (short); 4- ifs_short;  5-spc_wide; 
 isFull   = 1;  % 1 -full model; 0 -compact model
 
 %---------------------------------------------
-% nlam = 4;%9;  
+nlam = 1;%9;  
 npsf = 256;
 % bw = 0.10;
 optval.final_sampling_lam0 = 0.1;   % 0.2 for disc
@@ -54,8 +56,8 @@ if isFull; mdl_str ='';    else; mdl_str = '_compact'; end
 
 
 % 1. offaxis compact model for normalizing factor 
-% EE0 = prop_run_multi(['wfirst_phaseb_v2_compact'  ], lam_array, npsf, 'quiet', 'passvalue',optval );
-EE0 = prop_run(['wfirst_phaseb_v2_compact'  ], lambda0, npsf, 'quiet', 'passvalue',optval );
+% EE0 = prop_run_multi(['wfirst_phaseb_compact'  ], lam_array, npsf, 'quiet', 'passvalue',optval );
+EE0 = prop_run(['wfirst_phaseb_compact'  ], lambda0, npsf, 'quiet', 'passvalue',optval );
 
 if isFull                   % full & compact diff
     optval.zindex = 4;
@@ -65,8 +67,8 @@ end
 optval.source_x_offset =0;
 
 % 2. regular psf full or compact
-% EE = prop_run_multi(['wfirst_phaseb_v2' mdl_str], lam_array, npsf, 'quiet', 'passvalue',optval );
-EE = prop_run(['wfirst_phaseb_v2' mdl_str], lambda0, npsf, 'quiet', 'passvalue',optval );
+% EE = prop_run_multi(['wfirst_phaseb' mdl_str], lam_array, npsf, 'quiet', 'passvalue',optval );
+EE = prop_run(['wfirst_phaseb' mdl_str], lambda0, npsf, 'quiet', 'passvalue',optval );
 
 
 max_psf0  = max(max(sum(abs(EE0).^2,3)))/nlam;

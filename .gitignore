@@ -9,7 +9,9 @@
 !new_toma_pha.fits
 
 maps/**
+fld/**
 !maps/placeholder.txt
+!fld/placeholder.txt
 
 spc_20190130/*.fits
 spc_20181220/*.fits

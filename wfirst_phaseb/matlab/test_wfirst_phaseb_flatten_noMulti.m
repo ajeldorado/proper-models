@@ -1,13 +1,13 @@
 %  3/14/2019, Hanying Zhou  
+%  2019-05-23, A.J. Riggs
+
 clear all
 
 restoredefaultpath
 
-optval.phaseb_dir = '/Users/ajriggs/Repos/proper-models/wfirst_phaseb/';
-
+optval.phaseb_dir = fileparts('/Users/ajriggs/Repos/proper-models/wfirst_phaseb/'); %--fileparts.m removes the trailing slash
 addpath('~/Documents/MATLAB/PROPER');
 addpath(genpath(optval.phaseb_dir))
-
 cd(optval.phaseb_dir)
 
 %-------------------------------------------
@@ -15,7 +15,7 @@ cd(optval.phaseb_dir)
 
 testcase = 1;  % 1 -hlc; 2- hlc_erkin; 3 -spc-ifs (long); 4- ifs_short;  5-spc_wide; 
 optval.end_at_fpm_exit_pupil =0;%1;
-optval.output_field_rootname = ['fld_at_xtPup'];
+optval.output_field_rootname = [optval.phaseb_dir filesep 'fld' filesep 'fld_at_xtPup'];
 %-------------------------------------------
 nlam = 9;  
 npsf = 256;
@@ -60,7 +60,7 @@ EE = prop_run(['wfirst_phaseb'], lambda0, npsf, 'quiet', 'passvalue',optval );
 
 
 % 3. post flatten, full
-optval.dm1_m = fitsread ([optval.phaseb_dir 'dm1_flatten.fits']);
+optval.dm1_m = fitsread (['dm1_flatten.fits']);
 %optval.dm1_m = fitsread (['/home/hanying/afta_im/idl_etc/dm1_flatten.fits']);
 optval.use_dm1 =1;
 % Ef = prop_run_multi(['wfirst_phaseb' ], lam_array, npsf, 'quiet', 'passvalue',optval );
