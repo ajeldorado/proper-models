@@ -1,0 +1,6 @@
+The Phase B surface error maps are too large to place on Github.com. They will be on the WFIRST website hosted by IPAC: 
+https://wfirst.ipac.caltech.edu/sims/Coronagraph_public_images.html#Error_Maps 
+Currently just the Phase A surface error maps are on the IPAC website.
+
+
+This is a placeholder file to allow git to sync this entire folder.
