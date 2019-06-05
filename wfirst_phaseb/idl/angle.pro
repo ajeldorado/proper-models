@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 function angle, nx, ny, xc, yc, RADIANS=RADIANS
 
 ;-- returns angle in degrees (or radians if /RADIANS)

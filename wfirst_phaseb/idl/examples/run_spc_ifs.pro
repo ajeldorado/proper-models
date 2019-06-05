@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 lam0 = 0.73d
 lam_min = lam0 * 0.91d
 lam_max = lam0 * 1.09d

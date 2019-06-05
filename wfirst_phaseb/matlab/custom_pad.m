@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 % -------------------------------------------------------------------
 % [out] = pad(in, npix)     -   Pads input matrix to size npix by npix
 % [out] = pad(in, npix_rows, npix_cols);  % alternate usage

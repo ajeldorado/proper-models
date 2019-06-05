@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 ;-----------------------------------------------------------------------
 ; mtf:
 ;   Compute a matrix fourier transform.  Based on Soummer et al. 2007.

@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 pro tv3, red, green, blue, xoff, yoff, SCALE=SCALE
 
 if ( n_elements(red) eq 1 ) then begin

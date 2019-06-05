@@ -1,3 +1,6 @@
+#   Copyright 2019 California Institute of Technology
+# ------------------------------------------------------------------
+
 import numpy as np
 
 def mft2( field_in, dout, D, nout, direction, xoffset=0, yoffset=0, xc=0, yc=0 ):

@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 %function out = mft2(in, dout, D, nout, direction, xoffset, yoffset, xc, yc)
 %----------------------------------------------------------------------
 % mtf:

@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 pro showcontrast, contrast, pupil_ratio, inner_radius, outer_radius, MAG=MAG, xoffset=xoffset, yoffset=yoffset, COLOR_TABLE=COLOR_TABLE, $
 	MIN_CONTRAST=min_contrast, MAX_CONTRAST=max_contrast, MATLAB=MATLAB, NOBAR=NOBAR, CIRCULAR=CIRCULAR, C_SHAPED=C_SHAPED, D_SHAPED=D_SHAPED, $
 	XBAROFFSET=XBAROFFSET, YBAROFFSET=YBAROFFSET, MASK=mask0, GRIDSIZE=gridsize, TEXTCOLOR=textcolor, OPENING_ANGLE=opening_angle

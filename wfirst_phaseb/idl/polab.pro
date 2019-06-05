@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 pro polab, polfile, lambda_m, pupil_diam_pix, condition, amp, pha
 
 ;-- polfile: rootname of file containing polarization coefficients

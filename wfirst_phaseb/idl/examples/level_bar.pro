@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 pro level_bar, xbar, ybar, dxbar, dybar, minbar, maxbar, ticks, labels, BIT8=BIT8, TEXTCOLOR=textcolor
 
 if ( dxbar gt dybar ) then begin

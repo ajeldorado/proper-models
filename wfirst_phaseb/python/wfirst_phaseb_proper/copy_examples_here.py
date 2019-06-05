@@ -1,3 +1,6 @@
+#   Copyright 2019 California Institute of Technology
+# ------------------------------------------------------------------
+
 import shutil
 import wfirst_phaseb_proper
 

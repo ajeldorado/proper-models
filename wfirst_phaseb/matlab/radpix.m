@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 function radi = radpix( nx, ny )
 
   ix2  = [-floor(nx / 2 ) : floor((nx - 1) / 2)].^2;

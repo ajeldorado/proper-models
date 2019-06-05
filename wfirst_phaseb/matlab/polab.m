@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 % Function to generate the polarization aberrations for Cycle 6 of the
 % WFIRST CGI in the Phase A model.
 %

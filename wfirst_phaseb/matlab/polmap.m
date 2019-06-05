@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 % Function to compute the polarization aberrations by calling polab.m. 
 % The mean polarization aberrations can be returned to mimic the effect of 
 % wavefront sensing. 

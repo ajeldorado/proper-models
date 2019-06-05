@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 pro matlab_colortable, red, green, blue
 
 x = findgen(256)/255.0 * 2 - 1

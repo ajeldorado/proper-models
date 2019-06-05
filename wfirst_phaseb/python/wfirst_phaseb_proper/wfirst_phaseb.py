@@ -1,3 +1,6 @@
+#   Copyright 2019 California Institute of Technology
+# ------------------------------------------------------------------
+
 # Version 1.0, 3 January 2019, JEK
 # Version 1.0a, 9 January 2019, JEK 
 #    Changes: 1) now append polaxis to output_field_rootname 
@@ -135,7 +138,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
 
     if cor_type == 'hlc':
         file_directory = data_dir + '/hlc_20190210/'         # must have trailing "/"
-        prefix = file_directory + 'run461_nro_'
+        prefix = file_directory + 'run461_'
         pupil_diam_pix = 309.0
         pupil_file = prefix + 'pupil_rotated.fits'
         lyot_stop_file = prefix + 'lyot.fits'
@@ -219,7 +222,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_from_lyotstop = 4096
     elif cor_type == 'none': 
         file_directory = data_dir + '/hlc_20190210/'         # must have trailing "/"
-        prefix = file_directory + 'run461_nro_'
+        prefix = file_directory + 'run461_'
         pupil_diam_pix = 309.0
         pupil_file = prefix + 'pupil_rotated.fits'
         use_fpm = 0

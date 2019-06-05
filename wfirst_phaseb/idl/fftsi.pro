@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 function fftsi, data, direction, NTHREADS=NTHREADS
 
 if ( n_elements(direction) eq 0 ) then direction=-1

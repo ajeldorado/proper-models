@@ -1,3 +1,6 @@
+#   Copyright 2019 California Institute of Technology
+# ------------------------------------------------------------------
+
 import os
 import os.path as _osp
 

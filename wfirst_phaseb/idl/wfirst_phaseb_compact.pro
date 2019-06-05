@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 ;-- Version 1.0, 3 Jan 2019, JEK
 ;-- Version 1.0a, 9 Jan 2019, JEK
 ;--   Changes: If reading in input field using input_field_rootname, the
@@ -62,7 +66,7 @@ endif
 
 if ( cor_type eq 'hlc' ) then begin
         file_directory = data_dir + '/hlc_20190210/'         ;-- must have trailing "/"
-        prefix = file_directory + 'run461_nro_' 
+        prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
         pupil_file = prefix + 'pupil_rotated.fits'
         lyot_stop_file = prefix + 'lyot.fits'
@@ -131,7 +135,7 @@ endif else if ( cor_type eq 'spc-wide' ) then begin
 	n_big = 1400	;-- gridsize to FPM (propagation to/from FPM handled by MFT) 
 endif else if ( cor_type eq 'none' ) then begin
         file_directory = data_dir + '/hlc_20190210/'         ;-- must have trailing "/"
-        prefix = file_directory + 'run461_nro_' 
+        prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
         pupil_file = prefix + 'pupil_rotated.fits'
 	use_fpm = 0

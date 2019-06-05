@@ -1,3 +1,6 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
 nlam = 7
 bandwidth = 0.1d	;-- bandpass fractional width
 lam0 = 0.575d		;-- central wavelength (microns)

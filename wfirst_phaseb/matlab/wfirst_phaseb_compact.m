@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 %   Copyright 2019, California Institute of Technology
 %   Users must agree to abide by the restrictions listed in the
 %   file "LegalStuff.txt" in the PROPER library directory.
@@ -69,7 +72,7 @@ end
 
 if strcmp(cor_type,'hlc') 
     file_directory = [data_dir '/hlc_20190210/'];         %   must have trailing "/"
-    prefix = [file_directory   'run461_nro_'];
+    prefix = [file_directory   'run461_'];
     pupil_diam_pix = 309.0;
     pupil_file = [prefix   'pupil_rotated.fits'];
     lyot_stop_file = [prefix  'lyot.fits'];
@@ -127,7 +130,7 @@ elseif  strcmp(cor_type, 'spc-wide' )
     n_big = 1400;               %   gridsize to FPM (propagation to/from FPM handled by MFT)
 elseif strcmp(cor_type, 'none' )
     file_directory = './hlc_20190210/';         % must have trailing "/"
-    prefix = file_directory + 'run461_nro_';
+    prefix = file_directory + 'run461_';
     pupil_file = prefix + 'pupil_rotated.fits';
     use_fpm = 0;
     pupil_diam_pix = 309.0;
@@ -249,9 +252,6 @@ if contains(cor_type,'hlc' ) && use_fpm
     wavefront = custom_pad(wavefront,n);
     wavefront = fftshift(fft2(ifftshift(wavefront)));  %   to focus
     occ = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
-    if angle(occ(1,1)) ~= 0
-	occ = occ.*exp(-1j*angle(occ(1,1))); %--Standardize the phase of the masks to be 0 for the outer glass part.
-    end
     wavefront = wavefront .* custom_pad(occ,n);
     clear occ 
     wavefront = fftshift(ifft2(ifftshift(wavefront)));  %   FFT to Lyot stop

@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 library_file = 'ffti'
 input_file = 'ffti'
 exported_routines = ['ffti']

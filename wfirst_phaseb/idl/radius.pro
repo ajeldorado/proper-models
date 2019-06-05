@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 function radius, nx, ny, xc, yc
 
 if ( n_params() eq 2 ) then begin

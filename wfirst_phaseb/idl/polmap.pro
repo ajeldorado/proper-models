@@ -1,3 +1,7 @@
+;   Copyright 2019 California Institute of Technology
+; ------------------------------------------------------------------
+
+
 pro polmap, wavefront, polfile, pupil_diam_pix, condition, MUF=muf
 
 ;-- wavefront: current wavefront structure

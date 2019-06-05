@@ -1,3 +1,6 @@
+%   Copyright 2019 California Institute of Technology
+% ------------------------------------------------------------------
+
 %function [ wavefront, sampling_m ] =  wfirst_phaseb(lambda_m, output_dim0, optval)
 
 % Version 1.0, 3 January 2019, JEK
@@ -37,6 +40,8 @@
 % at different wavelengths.
 % Modified on 2019-05-07 by A.J. Riggs to include the case 'spc_ifs_custom'
 % for custom SPC-IFS designs.
+% Modified on 2019-06-06 by J. Krist to take out the code that subtracts the
+% phase offset; the FPM files have instead been phase adjusted
 
 function [wavefront,  sampling_m]= wfirst_phaseb(lambda_m, output_dim0, optval)
 
@@ -135,7 +140,7 @@ end
 
 if  strcmp(cor_type,'hlc')
     file_directory = [data_dir '/hlc_20190210/'];         % must have trailing "/"
-    prefix = [file_directory  'run461_nro_'];
+    prefix = [file_directory  'run461_'];
     pupil_diam_pix = 309.0;
     pupil_file = [prefix  'pupil_rotated.fits'];
     lyot_stop_file = [prefix  'lyot.fits'];
@@ -212,7 +217,7 @@ elseif  strcmp(cor_type, 'spc-wide' )
     n_from_lyotstop = 4096;
 elseif strcmp(cor_type, 'none' )
     file_directory = './hlc_20190210/';         % must have trailing "/"
-    prefix = file_directory + 'run461_nro_';
+    prefix = file_directory + 'run461_';
     pupil_file = prefix + 'pupil_rotated.fits';
     use_fpm = 0;
     use_lyot_stop = 0;
@@ -560,9 +565,6 @@ if ( use_fpm )
     
     if ( contains(cor_type,'hlc')  )
         occ = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
-        if angle(occ(1,1)) ~= 0
-		occ = occ.*exp(-1j*angle(occ(1,1))); %--Standardize the phase of the masks to be 0 for the outer glass part.
-	end
         wavefront = prop_multiply(wavefront, custom_pad(occ,n));
         clear occ
     elseif ( contains(cor_type,'spc')  )
