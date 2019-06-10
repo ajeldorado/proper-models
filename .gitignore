@@ -10,6 +10,10 @@ wfirst_phaseb/DoesNotSync/**
 #!wfirst_phaseb/dm1_flatten*.fits
 !wfirst_phaseb/data/pol/new_toma_amp.fits
 !wfirst_phaseb/data/pol/new_toma_pha.fits
+!wfirst_phaseb/data/hlc_20190210.zip
+!wfirst_phaseb/data/hlc_20190206_v3.zip
+!wfirst_phaseb/data/spc_20190130.zip
+!wfirst_phaseb/data/spc_20181220.zip
 
 wfirst_phaseb/data/maps/**
 wfirst_phaseb/data/fld/**
@@ -25,11 +29,6 @@ wfirst_phaseb/data/fld/**
 #!spc_ifs_custom/placeholder.txt
 #!spc_wfov_custom/placeholder.txt
 #!hlc_custom/placeholder.txt
-
-wfirst_phaseb/maps/**
-wfirst_phaseb/fld/**
-!wfirst_phaseb/maps/placeholder.txt
-!wfirst_phaseb/fld/placeholder.txt
 
 wfirst_phaseb/data/spc_20190130/**
 wfirst_phaseb/data/spc_20181220/**
