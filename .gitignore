@@ -41,8 +41,11 @@ wfirst_phaseb/data/hlc_custom/**
 !wfirst_phaseb/data/spc_wfov_custom/placeholder.txt
 !wfirst_phaseb/data/hlc_custom/placeholder.txt
 
-
-
+!wfirst_phaseb/data/errors_polaxis10_dm.fits
+!wfirst_phaseb/data/hlc_dm1.fits
+!wfirst_phaseb/data/hlc_dm2.fits
+!wfirst_phaseb/data/hlc_with_aberrations_dm1.fits
+!wfirst_phaseb/data/hlc_with_aberrations_dm2.fits
 
 
 
