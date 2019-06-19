@@ -32,7 +32,7 @@ function [wavefront,  sampling_m]= wfirst_phaseb_compact(lambda_m, output_dim0, 
 %   "output_dim" is used to specify the output dimension in pixels at the final image plane.  
 %   The computational grid sizes are hardcoded for each coronagraph.
 
-data_dir = '/home/krist/afta/phaseb/phaseb_data'	% no trailing '/'
+data_dir = '/home/krist/afta/phaseb/phaseb_data';	% no trailing '/'
 
 if ( isfield(optval,'data_dir') )
     data_dir = optval.data_dir;

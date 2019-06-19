@@ -1,5 +1,5 @@
 ##
-wfirst_phaseb/DoesNotSync/**
+wfirst_cgi/models_phaseb/DoesNotSync/**
 
 ## Compiled python
 *.pyc
@@ -7,45 +7,35 @@ wfirst_phaseb/DoesNotSync/**
 ## FITS Files
 *.fits
 *.FITS
-#!wfirst_phaseb/dm1_flatten*.fits
-!wfirst_phaseb/data/pol/new_toma_amp.fits
-!wfirst_phaseb/data/pol/new_toma_pha.fits
-!wfirst_phaseb/data/hlc_20190210.zip
-!wfirst_phaseb/data/hlc_20190206_v3.zip
-!wfirst_phaseb/data/spc_20190130.zip
-!wfirst_phaseb/data/spc_20181220.zip
+#!wfirst_cgi/dm1_flatten*.fits
+!wfirst_cgi/data_phaseb/pol/new_toma_amp.fits
+!wfirst_cgi/data_phaseb/pol/new_toma_pha.fits
+!wfirst_cgi/data_phaseb/hlc_20190210.zip
+!wfirst_cgi/data_phaseb/hlc_20190206_v3.zip
+!wfirst_cgi/data_phaseb/spc_20190130.zip
+!wfirst_cgi/data_phaseb/spc_20181220.zip
 
-wfirst_phaseb/data/maps/**
-wfirst_phaseb/data/fld/**
-!wfirst_phaseb/data/maps/placeholder.txt
-!wfirst_phaseb/data/fld/placeholder.txt
+wfirst_cgi/data_phaseb/maps/**
+wfirst_cgi/data_phaseb/fld/**
+!wfirst_cgi/data_phaseb/maps/readme_maps.txt
+!wfirst_cgi/data_phaseb/fld/placeholder.txt
 
-#spc_20190130/*.fits
-#spc_20181220/*.fits
-#hlc_20190210/*.fits
-#spc_ifs_custom/**
-#spc_wfov_custom/**
-#hlc_custom/**
-#!spc_ifs_custom/placeholder.txt
-#!spc_wfov_custom/placeholder.txt
-#!hlc_custom/placeholder.txt
+wfirst_cgi/data_phaseb/spc_20190130/**
+wfirst_cgi/data_phaseb/spc_20181220/**
+wfirst_cgi/data_phaseb/hlc_20190210/**
+wfirst_cgi/data_phaseb/hlc_20190206_v3/**
+wfirst_cgi/data_phaseb/spc_ifs_custom/**
+wfirst_cgi/data_phaseb/spc_wfov_custom/**
+wfirst_cgi/data_phaseb/hlc_custom/**
+!wfirst_cgi/data_phaseb/spc_ifs_custom/placeholder.txt
+!wfirst_cgi/data_phaseb/spc_wfov_custom/placeholder.txt
+!wfirst_cgi/data_phaseb/hlc_custom/placeholder.txt
 
-wfirst_phaseb/data/spc_20190130/**
-wfirst_phaseb/data/spc_20181220/**
-wfirst_phaseb/data/hlc_20190210/**
-wfirst_phaseb/data/hlc_20190206_v3/**
-wfirst_phaseb/data/spc_ifs_custom/**
-wfirst_phaseb/data/spc_wfov_custom/**
-wfirst_phaseb/data/hlc_custom/**
-!wfirst_phaseb/data/spc_ifs_custom/placeholder.txt
-!wfirst_phaseb/data/spc_wfov_custom/placeholder.txt
-!wfirst_phaseb/data/hlc_custom/placeholder.txt
-
-!wfirst_phaseb/data/errors_polaxis10_dm.fits
-!wfirst_phaseb/data/hlc_dm1.fits
-!wfirst_phaseb/data/hlc_dm2.fits
-!wfirst_phaseb/data/hlc_with_aberrations_dm1.fits
-!wfirst_phaseb/data/hlc_with_aberrations_dm2.fits
+!wfirst_cgi/data_phaseb/errors_polaxis10_dm.fits
+!wfirst_cgi/data_phaseb/hlc_dm1.fits
+!wfirst_cgi/data_phaseb/hlc_dm2.fits
+!wfirst_cgi/data_phaseb/hlc_with_aberrations_dm1.fits
+!wfirst_cgi/data_phaseb/hlc_with_aberrations_dm2.fits
 
 
 
