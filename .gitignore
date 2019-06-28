@@ -7,6 +7,12 @@ wfirst_cgi/models_phaseb/DoesNotSync/**
 ## FITS Files
 *.fits
 *.FITS
+
+!wfirst_cgi/models_phaseb/matlab/examples/*.fits
+!wfirst_cgi/models_phaseb/python/wfirst_phaseb_proper/examples/*.fits
+!wfirst_cgi/models_phaseb/idl/examples/*.fits
+
+
 #!wfirst_cgi/dm1_flatten*.fits
 !wfirst_cgi/data_phaseb/pol/new_toma_amp.fits
 !wfirst_cgi/data_phaseb/pol/new_toma_pha.fits
