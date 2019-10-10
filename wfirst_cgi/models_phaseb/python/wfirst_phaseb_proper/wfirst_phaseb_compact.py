@@ -13,8 +13,10 @@
 #                 option to 'cor_type' to 'spc-ifs' and changed default SPC to SPC-20190130 and
 #                 updated associated parameters; added 'spc-wide' option to 'cor_type' to use
 #                 SPC-20191220. Changed DM tilt to rotation around Y axis.
-#   Version 1.2, 28 May 2919, JEK
+#   Version 1.2, 28 May 2019, JEK
 #       Changed lib_dir to data_dir 
+#   Vesion 1.4, 7 Oct 2019, JEK
+#       Aliased spc-spec_* to spc-ifs_*
 
 import proper
 import numpy as np
@@ -69,7 +71,11 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         if 'cor_type' in PASSVALUE: cor_type = PASSVALUE['cor_type']
         if 'fpm_axis' in PASSVALUE: fpm_axis = PASSVALUE['fpm_axis']
 
+    is_hlc = False
+    is_spc = False
+
     if cor_type == 'hlc':
+        is_hlc = True
         file_directory = data_dir + '/hlc_20190210/'         # must have trailing "/"
         prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
@@ -92,6 +98,7 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_small = 1024                  # gridsize in non-critical areas
         n_big = 2048                    # gridsize to/from FPM
     elif cor_type == 'hlc_erkin':
+        is_hlc = True
         file_directory = data_dir + '/hlc_20190206_v3/'         # must have trailing "/"
         prefix = file_directory + 'dsn17d_run2_pup310_fpm2048_'
         pupil_diam_pix = 310.0
@@ -112,14 +119,15 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         occulter_file_i = lam_occs[wlam] + 'imag.fits'
         n_small = 1024                  # gridsize in non-critical areas
         n_big = 2048                    # gridsize to/from FPM
-    elif cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long':
+    elif cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long' or cor_type == 'spc-spec_short' or cor_type == 'spc-spec_long':
+        is_spc = True
         file_dir = data_dir + '/spc_20190130/' # must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20190130_rotated.fits'
         pupil_mask_file = file_dir + 'SPM_SPC-20190130_rotated.fits'
         fpm_file = file_dir + 'fpm_0.05lamdivD.fits' 
         fpm_sampling = 0.05    # sampling in lambda0/D of FPM mask 
-        if cor_type == 'spc-ifs_short':
+        if cor_type == 'spc-ifs_short' or cor_type == 'spc-spec_short':
             fpm_sampling_lambda_m = 0.66e-6
             lambda0_m = 0.66e-6
         else:
@@ -129,6 +137,7 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_small = 2048              # gridsize in non-critical areas
         n_big = 1400                # gridsize to FPM (propagation to/from FPM handled by MFT)
     elif cor_type == 'spc-wide':
+        is_spc = True
         file_dir = data_dir + '/spc_20181220/' # must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20181220_1k_rotated.fits'
@@ -210,14 +219,14 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         y = 0
     
     if use_dm1 != 0: prop_dm( wavefront, dm1_m, dm1_xc_act, dm1_yc_act, dm_sampling_m, XTILT=dm1_xtilt_deg, YTILT=dm1_ytilt_deg, ZTILT=dm1_ztilt_deg )
-    if (cor_type == 'hlc' or cor_type == 'hlc_erkin') and use_hlc_dm_patterns == 1:
+    if is_hlc == True and use_hlc_dm_patterns == 1:
         dm1wfe = proper.prop_fits_read( prefix+'dm1wfe.fits' )
         proper.prop_add_phase( wavefront, trim(dm1wfe, n) )
         dm1wfe = 0
 
     proper.prop_propagate( wavefront, d_dm1_dm2, 'DM2' )
     if use_dm2 == 1: prop_dm( wavefront, dm2_m, dm2_xc_act, dm2_yc_act, dm_sampling_m, XTILT=dm2_xtilt_deg, YTILT=dm2_ytilt_deg, ZTILT=dm2_ztilt_deg )
-    if cor_type == 'hlc' or cor_type == 'hlc_erkin':
+    if is_hlc == True:
         if use_hlc_dm_patterns == 1:
             dm2wfe = proper.prop_fits_read( prefix+'dm2wfe.fits' )
             proper.prop_add_phase( wavefront, trim(dm2wfe, n) )
@@ -232,14 +241,14 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
 
     # apply shape pupil mask
 
-    if cor_type == 'spc-ifs_long' or cor_type == 'spc-ifs_short' or cor_type == 'spc-wide':
+    if is_spc == True:
         pupil_mask = proper.prop_fits_read( pupil_mask_file )
         wavefront *= trim(pupil_mask,n)
         pupil_mask = 0
 
     # propagate to FPM and apply FPM
 
-    if cor_type == 'hlc' or cor_type == 'hlc_erkin':
+    if is_hlc == True:
         n = n_big
         wavefront = trim(wavefront,n)
         wavefront = ffts(wavefront,-1)  # to focus
@@ -251,7 +260,7 @@ def wfirst_phaseb_compact( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         occ_i = 0
         occ = 0
         wavefront = ffts(wavefront,+1)  # to lyot stop
-    elif cor_type == 'spc-ifs_long' or cor_type == 'spc-ifs_short' or cor_type == 'spc-wide':
+    elif is_spc == True:
         n = n_big
         wavefront = trim(wavefront,n)
         fpm = proper.prop_fits_read( fpm_file )

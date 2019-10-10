@@ -21,6 +21,9 @@
 %      Changes:   Changed option of cor_type='spc-ifs' to 'spc-ifs_short' for 660 nm FPM, 
 %  		  'spc-ifs_long' for 730 nm FPM.  Rotated SPC masks to match orientation 
 %  		  of pupil in HLC. Added Erkin's HLC design. dm_sampling set to 0.9906 mm.
+%   Version 1.5, 7 Oct 2019, JEK
+%      Changes:   Aliased spc-spec_* to spc-ifs_*
+%
 %   Based on Zemax prescription "WFIRST_CGI_DI_LOWFS_Sep24_2018.zmx" by Hong Tang.
 %
 %  IDL version (original), John E Krist
@@ -70,7 +73,11 @@ if(exist('optval','var')==1) %if exist('optval')
 	if ( isfield(optval,'fpm_axis') );  fpm_axis = optval.fpm_axis; end
 end
 
+is_hlc = 0;
+is_spc = 0;
+
 if strcmp(cor_type,'hlc') 
+    is_hlc = 1;
     file_directory = [data_dir '/hlc_20190210/'];         %   must have trailing "/"
     prefix = [file_directory   'run461_'];
     pupil_diam_pix = 309.0;
@@ -87,6 +94,7 @@ if strcmp(cor_type,'hlc')
     n_small = 1024;         %   gridsize in non-critical areas
     n_big = 2048;           %   gridsize to/from FPM
 elseif  strcmp(cor_type,'hlc_erkin')
+    is_hlc = 1;
     file_directory = [data_dir '/hlc_20190206_v3/'];         % must have trailing "/"
     prefix = [file_directory  'dsn17d_run2_pup310_fpm2048_'];
     pupil_diam_pix = 310.0;
@@ -105,7 +113,8 @@ elseif  strcmp(cor_type,'hlc_erkin')
     n_small = 1024;	% gridsize in non-critical areas
     n_big =2048;    % gridsize to/from FPM
 
-elseif  contains(cor_type, 'spc-ifs' ) %~isempty(strfind(cor_type,  'spc-ifs' ))
+elseif contains(cor_type, 'spc-ifs') || contains(cor_type, 'spc-spec') 
+    is_spc = 1;
     file_dir = [data_dir '/spc_20190130/'];        %   must have trailing "/"
     pupil_diam_pix  = 1000.0;
     pupil_file      = [file_dir  'pupil_SPC-20190130_rotated.fits'];
@@ -114,10 +123,11 @@ elseif  contains(cor_type, 'spc-ifs' ) %~isempty(strfind(cor_type,  'spc-ifs' ))
     lyot_stop_file  = [file_dir  'lyotstop_0.5mag.fits'];
     fpm_sampling_lam0 = 0.05;	%   sampling in lambda0/D of FPM mask
     lambda0_m = 0.73e-6;        %   FPM scaled for this central wavelength
-    if ( contains(cor_type,'spc-ifs_short' ));  lambda0_m = 0.66e-6; end 
+    if ( contains(cor_type,'spc-ifs_short') || contains(cor_type,'spc-spec_short') );  lambda0_m = 0.66e-6; end 
     n_small = 2048;             %   gridsize in non-critical areas
     n_big = 1400;               %   gridsize to FPM (propagation to/from FPM handled by MFT)
 elseif  strcmp(cor_type, 'spc-wide' )
+    is_spc = 1;
     file_dir = [data_dir '/spc_20181220/'];        %   must have trailing "/"
     pupil_diam_pix = 1000.0;
     pupil_file      = [file_dir  'pupil_SPC-20181220_1k_rotated.fits'];
@@ -213,7 +223,7 @@ if(use_dm1)
         'xtilt',dm1_xtilt_deg, 'ytilt', dm1_ytilt_deg, 'ztilt',dm1_ztilt_deg);
 end
 
-if( contains(cor_type,'hlc') && use_hlc_dm_patterns )
+if( is_hlc && use_hlc_dm_patterns )
     dm1wfe = fitsread([prefix 'dm1wfe.fits']);
     wavefront = prop_add_phase(wavefront, custom_pad(dm1wfe, n));
     clear dm1wfe
@@ -226,7 +236,7 @@ if(use_dm2)
         'xtilt',dm2_xtilt_deg, 'ytilt', dm2_ytilt_deg, 'ztilt',dm2_ztilt_deg);
 end
 
-if  contains(cor_type,'hlc' )
+if  is_hlc
     if  use_hlc_dm_patterns
         dm2wfe = fitsread([prefix 'dm2wfe.fits']);
         wavefront = prop_add_phase( wavefront, custom_pad(dm2wfe, n));
@@ -241,13 +251,13 @@ wavefront = prop_propagate (wavefront, -d_dm1_dm2, 'surface_name','back to DM1')
 
 [wavefront, sampling_m]= prop_end (wavefront, 'noabs');
 
-if contains(cor_type, 'spc')   
+if is_spc   
     pupil_mask = fitsread(pupil_mask_file);
     wavefront = wavefront .* custom_pad(pupil_mask,n);
     clear pupil_mask 
 end
 
-if contains(cor_type,'hlc' ) && use_fpm 
+if is_hlc && use_fpm 
     n = n_big;
     wavefront = custom_pad(wavefront,n);
     wavefront = fftshift(fft2(ifftshift(wavefront)));  %   to focus
@@ -255,7 +265,7 @@ if contains(cor_type,'hlc' ) && use_fpm
     wavefront = wavefront .* custom_pad(occ,n);
     clear occ 
     wavefront = fftshift(ifft2(ifftshift(wavefront)));  %   FFT to Lyot stop
-elseif( contains(cor_type, 'spc') && use_fpm ) 
+elseif( is_spc && use_fpm ) 
     n = n_big;
     wavefront = custom_pad(wavefront,n);
     fpm = fitsread(fpm_file);

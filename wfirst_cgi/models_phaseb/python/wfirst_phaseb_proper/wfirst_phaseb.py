@@ -25,6 +25,10 @@
 #                 for fpm_axis, since the FPM tilt is small enough now that it doesn't matter
 #   Version 1.2, 28 May 2019, JEK
 #      Changed lib_dir to data_dir 
+#   Version 1.4, 25 Sept 2019, JEK
+#      Added optional use_pupil_mask parameter (SPC only)
+#   Version 1.5, 25 Sept 2019, JEK
+#      Aliased spc-ifs_short and spc-ifs_long to spc-spec_short and spc-spec_long
 
 import proper
 import numpy as np
@@ -105,6 +109,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     dm2_xtilt_deg = 0           # tilt around X axis (deg)
     dm2_ytilt_deg = 5.7         # effective DM tilt in deg including 9.65 deg actual tilt and pupil ellipticity
     dm2_ztilt_deg = 0           # rotation of DM about optical axis (deg)
+    use_pupil_mask = 1          # SPC only: use SPC pupil mask (0 or 1)
     mask_x_shift_pupdiam = 0    # X,Y shear of shaped pupil mask; normalized relative to pupil diameter
     mask_y_shift_pupdiam = 0          
     mask_x_shift_m = 0          # X,Y shear of shaped pupil mask in meters
@@ -136,7 +141,11 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         if 'use_fpm' in PASSVALUE: use_fpm = PASSVALUE['use_fpm']
         if 'cor_type' in PASSVALUE: cor_type = PASSVALUE['cor_type']
 
+    is_spc = False
+    is_hlc = False
+
     if cor_type == 'hlc':
+        is_hlc = True
         file_directory = data_dir + '/hlc_20190210/'         # must have trailing "/"
         prefix = file_directory + 'run461_'
         pupil_diam_pix = 309.0
@@ -164,6 +173,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_from_lyotstop = 1024
         field_stop_radius_lam0 = 9.0
     elif cor_type == 'hlc_erkin':
+        is_hlc = True
         file_directory = data_dir + '/hlc_20190206_v3/'         # must have trailing "/"
         prefix = file_directory + 'dsn17d_run2_pup310_fpm2048_'
         pupil_diam_pix = 310.0
@@ -188,14 +198,15 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
             n_to_fpm = 1024
         n_from_lyotstop = 1024
         field_stop_radius_lam0 = 9.0
-    elif cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long':
+    elif cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long' or cor_type == 'spc-spec_short' or cor_type == 'spc-spec_long':
+        is_spc = True
         file_dir = data_dir + '/spc_20190130/' # must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20190130_rotated.fits'
         pupil_mask_file = file_dir + 'SPM_SPC-20190130.fits'
         fpm_file = file_dir + 'fpm_0.05lamdivD.fits'
         fpm_sampling = 0.05         # sampling in fpm_sampling_lambda_m/D of FPM mask 
-        if cor_type == 'spc-ifs_short':
+        if cor_type == 'spc-ifs_short' or cor_type == 'spc-spec_short':
             fpm_sampling_lambda_m = 0.66e-6
             lambda0_m = 0.66e-6
         else:
@@ -207,6 +218,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_mft = 1400                # gridsize to FPM (propagation to/from FPM handled by MFT)
         n_from_lyotstop = 4096
     elif cor_type == 'spc-wide':
+        is_spc = True
         file_dir = data_dir + '/spc_20181220/' # must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20181220_1k_rotated.fits'
@@ -232,7 +244,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         n_to_fpm = 1024
         n_from_lyotstop = 1024
     else:
-        raise Exception('ERROR: Unsuported cor_type: '+cor_type)
+        raise Exception('ERROR: Unsupported cor_type: '+cor_type)
 
     if 'PASSVALUE' in locals():
         if 'lam0' in PASSVALUE: lamba0_m = PASSVALUE['lam0'] * 1.0e-6
@@ -271,6 +283,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         if 'dm2_xtilt_deg' in PASSVALUE: dm2_xtilt_deg = PASSVALUE['dm2_xtilt_deg']
         if 'dm2_ytilt_deg' in PASSVALUE: dm2_ytilt_deg = PASSVALUE['dm2_ytilt_deg']
         if 'dm2_ztilt_deg' in PASSVALUE: dm2_ztilt_deg = PASSVALUE['dm2_ztilt_deg']
+        if 'use_pupil_mask' in PASSVALUE: use_pupil_mask = PASSVALUE['use_pupil_mask']
         if 'mask_x_shift_pupdiam' in PASSVALUE: mask_x_shift_pupdiam = PASSVALUE['mask_x_shift_pupdiam']
         if 'mask_y_shift_pupdiam' in PASSVALUE: mask_y_shift_pupdiam = PASSVALUE['mask_y_shift_pupdiam']
         if 'mask_x_shift_m' in PASSVALUE: mask_x_shift_m = PASSVALUE['mask_x_shift_m']
@@ -480,7 +493,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     proper.prop_propagate( wavefront, d_oap2_dm1, 'DM1' )
     if use_dm1 != 0: proper.prop_dm( wavefront, dm1_m, dm1_xc_act, dm1_yc_act, dm_sampling_m, XTILT=dm1_xtilt_deg, YTILT=dm1_ytilt_deg, ZTILT=dm1_ztilt_deg )
     if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_DM1_phase_error_V1.0.fits', WAVEFRONT=True )
-    if ( cor_type == 'hlc' or cor_type == 'hlc_erkin' ) and use_hlc_dm_patterns == 1:
+    if is_hlc == True and use_hlc_dm_patterns == 1:
         dm1wfe = proper.prop_fits_read( prefix+'dm1wfe.fits' )
         proper.prop_add_phase( wavefront, trim(dm1wfe, n) )
         dm1wfe = 0
@@ -488,7 +501,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     proper.prop_propagate( wavefront, d_dm1_dm2, 'DM2' )
     if use_dm2 == 1: proper.prop_dm( wavefront, dm2_m, dm2_xc_act, dm2_yc_act, dm_sampling_m, XTILT=dm2_xtilt_deg, YTILT=dm2_ytilt_deg, ZTILT=dm2_ztilt_deg )
     if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_DM2_phase_error_V1.0.fits', WAVEFRONT=True )
-    if cor_type == 'hlc' or cor_type == 'hlc_erkin':
+    if is_hlc == True:
         if use_hlc_dm_patterns == 1:
             dm2wfe = proper.prop_fits_read( prefix+'dm2wfe.fits' )
             proper.prop_add_phase( wavefront, trim(dm2wfe, n) )
@@ -512,7 +525,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     if use_aperture != 0: proper.prop_circular_aperture( wavefront, diam_oap4/2.0 )
 
     proper.prop_propagate( wavefront, d_oap4_pupilmask, 'PUPIL_MASK' )    # flat/reflective shaped pupil 
-    if cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long' or cor_type == 'spc-wide':
+    if is_spc == True and use_pupil_mask != 0:
         pupil_mask = proper.prop_fits_read( pupil_mask_file )
         pupil_mask = trim( pupil_mask, n )
         if mask_x_shift_pupdiam != 0 or mask_y_shift_pupdiam != 0 or mask_x_shift_m != 0 or mask_y_shift_m != 0:
@@ -576,7 +589,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
             wavefront0 = ffts( wavefront0, 1 )
             wavefront.wfarr[:,:] = proper.prop_shift_center(wavefront0)
             wavefront0 = 0
-        if cor_type == 'hlc' or cor_type == 'hlc_erkin':
+        if is_hlc == True:
             occ_r = proper.prop_fits_read( occulter_file_r )
             occ_i = proper.prop_fits_read( occulter_file_i )
             occ = np.array( occ_r + 1j * occ_i, dtype=np.complex128 )
@@ -584,7 +597,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
             occ_r = 0
             occ_i = 0
             occ = 0
-        elif cor_type == 'spc-ifs_short' or cor_type == 'spc-ifs_long' or cor_type == 'spc-wide':
+        elif is_spc == True:
             # super-sample FPM
             wavefront0 = proper.prop_get_wavefront(wavefront)
             wavefront0 = ffts( wavefront0, 1 )                # to virtual pupil

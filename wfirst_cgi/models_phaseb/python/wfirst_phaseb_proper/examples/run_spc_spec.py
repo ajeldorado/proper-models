@@ -9,11 +9,11 @@ from matplotlib.patches import Circle
 import wfirst_phaseb_proper
 from wfirst_phaseb_proper import trim
 
-def run_spc_wide_new():
+def run_spc_spec():
 
-    nlam = 7
-    lam0 = 0.825
-    bandwidth = 0.1
+    nlam = 9
+    lam0 = 0.73 
+    bandwidth = 0.15
     minlam = lam0 * (1 - bandwidth/2)
     maxlam = lam0 * (1 + bandwidth/2)
     lam_array = np.linspace( minlam, maxlam, nlam )
@@ -25,26 +25,26 @@ def run_spc_wide_new():
 
     print( "Computing unaberrated coronagraphic field using compact model..." )
     (fields, sampling) = proper.prop_run_multi('wfirst_phaseb_compact', lam_array, n, QUIET=True, \
-        PASSVALUE={'cor_type':'spc-wide','final_sampling_lam0':final_sampling} )
+        PASSVALUE={'cor_type':'spc-spec_long','final_sampling_lam0':final_sampling} )
     images = np.abs(fields)**2
     image_noab = np.sum( images, 0 ) / nlam
 
     # compute aberrated coronagraphic field using EFC-derived DM actuator settings
 
     print( "Computing aberrated coronagraphic field using DM actuator pistons..." )
-    dm1 = proper.prop_fits_read( wfirst_phaseb_proper.lib_dir + '/examples/spc-wide_with_aberrations_dm1.fits' )
-    dm2 = proper.prop_fits_read( wfirst_phaseb_proper.lib_dir + '/examples/spc-wide_with_aberrations_dm2.fits' )
+    dm1 = proper.prop_fits_read( wfirst_phaseb_proper.lib_dir + '/examples/spc-spec_long_with_aberrations_dm1.fits' )
+    dm2 = proper.prop_fits_read( wfirst_phaseb_proper.lib_dir + '/examples/spc-spec_long_with_aberrations_dm2.fits' )
     (fields, sampling) = proper.prop_run_multi('wfirst_phaseb', lam_array, n, QUIET=True, \
-        PASSVALUE={'cor_type':'spc-wide', 'use_errors':1, 'polaxis':10, 
+        PASSVALUE={'cor_type':'spc-spec_long', 'use_errors':1, 'polaxis':10, 
         'final_sampling_lam0':final_sampling, 'use_dm1':1, 'dm1_m':dm1, 'use_dm2':1, 'dm2_m':dm2} )
     images = np.abs(fields)**2
     image_ab = np.sum( images, 0 ) / nlam
 
-    # move source to 10 lam/D
+    # move source to 7 lam/D
 
     print( "Computing offset source to compute NI..." )
     (fields, sampling) = proper.prop_run_multi('wfirst_phaseb_compact', lam_array, n, QUIET=True, \
-        PASSVALUE={'cor_type':'spc-wide','source_x_offset':10.0,'final_sampling_lam0':final_sampling} )
+        PASSVALUE={'cor_type':'spc-spec_long','source_x_offset':7.0,'final_sampling_lam0':final_sampling} )
     psfs = np.abs(fields)**2
     psf = np.sum( psfs, 0 ) / nlam
 
@@ -56,16 +56,16 @@ def run_spc_wide_new():
     fig, ax  = plt.subplots( nrows=1, ncols=2, figsize=(8,4) )
 
     im = ax[0].imshow(ni_noab, norm=LogNorm(vmin=1e-10,vmax=1e-7), cmap=plt.get_cmap('jet'))
-    circ_in = Circle((n/2,n/2),5.4/final_sampling,edgecolor='white', facecolor='none')
-    circ_out = Circle((n/2,n/2),20/final_sampling,edgecolor='white', facecolor='none')
+    circ_in = Circle((n/2,n/2),3/final_sampling,edgecolor='white', facecolor='none')
+    circ_out = Circle((n/2,n/2),9/final_sampling,edgecolor='white', facecolor='none')
     ax[0].add_patch(circ_in)
     ax[0].add_patch(circ_out)
     ax[0].set_title('Unaberrated')
     fig.colorbar(im, ax=ax[0], shrink=0.5) 
 
     im = ax[1].imshow(ni_ab, norm=LogNorm(vmin=1e-10,vmax=1e-7), cmap=plt.get_cmap('jet'))
-    circ_in = Circle((n/2,n/2),5.4/final_sampling,edgecolor='white', facecolor='none')
-    circ_out = Circle((n/2,n/2),20/final_sampling,edgecolor='white', facecolor='none')
+    circ_in = Circle((n/2,n/2),3/final_sampling,edgecolor='white', facecolor='none')
+    circ_out = Circle((n/2,n/2),9/final_sampling,edgecolor='white', facecolor='none')
     ax[1].add_patch(circ_in)
     ax[1].add_patch(circ_out)
     ax[1].set_title('Aberrated,\nUsing DM piston maps')
@@ -74,4 +74,4 @@ def run_spc_wide_new():
     plt.show()
     
 if __name__ == '__main__':
-    run_spc_wide_new()
+    run_spc_spec()

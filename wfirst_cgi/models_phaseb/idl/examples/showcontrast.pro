@@ -88,8 +88,8 @@ endif
 
 if ( n_elements(opening_angle) ne 0 ) then begin
 	y = n/2 * atan(opening_angle/2.0*!pi/180.0)
-	plots, [0,n-1], [-y,y]+n/2, /dev, thick=3
-	plots, [0,n-1], [y,-y]+n/2, /dev, thick=3
+	plots, [0,n-1]+xoffset, [-y,y]+n/2+yoffset, /dev, thick=3
+	plots, [0,n-1]+xoffset, [y,-y]+n/2+yoffset, /dev, thick=3
 endif
 
 ticks = indgen(lmax-lmin+1) + lmin

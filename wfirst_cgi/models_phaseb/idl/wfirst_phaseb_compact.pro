@@ -20,6 +20,8 @@
 ;--		  of pupil in HLC. Added Erkin's HLC design. dm_sampling set to 0.9906 mm.
 ;-- Version 1.2, JEK
 ;--    Changes:   Added data_dir variable.
+;-- Version 1.5, JEK
+;--    Changes:   Aliased spc-spec_* to spc-ifs_*
 
 pro wfirst_phaseb_compact, wavefront, lambda_m, output_dim0, sampling_m, PASSVALUE=optval
 
@@ -64,7 +66,11 @@ if ( n_elements(optval) ne 0 ) then begin
 	if ( tag_exists('fpm_axis',optval) ) then fpm_axis = optval.fpm_axis
 endif
 
+is_hlc = 0
+is_spc = 0
+
 if ( cor_type eq 'hlc' ) then begin
+	is_hlc = 1
         file_directory = data_dir + '/hlc_20190210/'         ;-- must have trailing "/"
         prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
@@ -89,6 +95,7 @@ if ( cor_type eq 'hlc' ) then begin
 	n_small = 1024	;-- gridsize in non-critical areas
 	n_big = 2048 	;-- gridsize to/from FPM
 endif else if ( cor_type eq 'hlc_erkin' ) then begin
+	is_hlc = 1
         file_directory = data_dir + '/hlc_20190206_v3/'         ;-- must have trailing "/"
         prefix = file_directory + 'dsn17d_run2_pup310_fpm2048_' 
         pupil_diam_pix = 310.0
@@ -111,7 +118,8 @@ endif else if ( cor_type eq 'hlc_erkin' ) then begin
         occulter_file_i = lam_occs[wlam] + 'imag.fits'
 	n_small = 1024	;-- gridsize in non-critical areas
 	n_big = 2048 	;-- gridsize to/from FPM
-endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' ) then begin
+endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-spec_short' or cor_type eq 'spc-spec_long' ) then begin
+	is_spc = 1
         file_dir = data_dir + '/spc_20190130/'        ;-- must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20190130_rotated.fits'
@@ -119,10 +127,11 @@ endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' ) then
 	fpm_file = file_dir + 'fpm_0.05lamdivD.fits'
 	fpm_sampling_lam0 = 0.05d	;-- sampling in lambda0/D of FPM mask 
         lyot_stop_file = file_dir + 'lyotstop_0.5mag.fits'
-        if ( cor_type eq 'spc-ifs_short' ) then lambda0_m = 0.66d-6 else lambda0_m = 0.73d-6
+        if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-spec_short' ) then lambda0_m = 0.66d-6 else lambda0_m = 0.73d-6
 	n_small = 2048	;-- gridsize in non-critical areas
 	n_big = 1400	;-- gridsize to FPM (propagation to/from FPM handled by MFT) 
 endif else if ( cor_type eq 'spc-wide' ) then begin
+	is_spc = 1
         file_dir = data_dir + '/spc_20181220/'        ;-- must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20181220_1k_rotated.fits'
@@ -211,7 +220,7 @@ prop_begin, wavefront, diam_at_dm1, lambda_m, n, double(pupil_diam_pix)/n
         y = 0
    endif
    if ( use_dm1 ) then prop_dm, wavefront, dm1_m, dm1_xc_act, dm1_yc_act, dm_sampling_m, XTILT=dm1_xtilt_deg, YTILT=dm1_ytilt_deg, ZTILT=dm1_ztilt_deg
-   if ( (cor_type eq 'hlc' or cor_type eq 'hlc_erkin') and use_hlc_dm_patterns ) then begin
+   if ( is_hlc and use_hlc_dm_patterns ) then begin
    	fits_read, prefix+'dm1wfe.fits', dm1wfe
     	prop_add_phase, wavefront, trim(dm1wfe, n)
    	dm1wfe = 0
@@ -219,7 +228,7 @@ prop_begin, wavefront, diam_at_dm1, lambda_m, n, double(pupil_diam_pix)/n
 
 prop_propagate, wavefront, d_dm1_dm2, 'DM2'
    if ( use_dm2 ) then prop_dm, wavefront, dm2_m, dm2_xc_act, dm2_yc_act, dm_sampling_m, XTILT=dm2_xtilt_deg, YTILT=dm2_ytilt_deg, ZTILT=dm2_ztilt_deg
-   if ( cor_type eq 'hlc' or cor_type eq 'hlc_erkin' ) then begin
+   if ( is_hlc ) then begin
 	if ( use_hlc_dm_patterns ) then begin
    		fits_read, prefix+'dm2wfe.fits', dm2wfe
 		prop_add_phase, wavefront, trim(dm2wfe, n)
@@ -234,13 +243,13 @@ prop_propagate, wavefront, -d_dm1_dm2, 'back to DM1'
 
 prop_end, wavefront, sampling_m, /NOABS
 
-if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-wide' ) then begin
+if ( is_spc ) then begin
  	fits_read, pupil_mask_file, pupil_mask
  	wavefront = wavefront * trim(pupil_mask,n)
 	pupil_mask = 0
 endif
 
-if ( cor_type eq 'hlc' or cor_type eq 'hlc_erkin' ) then begin
+if ( is_hlc ) then begin
 	n = n_big
 	wavefront = trim(wavefront,n)
 	wavefront = fftsi(wavefront,-1,NTHREADS=1)	;-- to focus
@@ -252,7 +261,7 @@ if ( cor_type eq 'hlc' or cor_type eq 'hlc_erkin' ) then begin
 	occ_i = 0
 	occ = 0
 	wavefront = fftsi(wavefront,+1,NTHREADS=1) 		;-- FFT to Lyot stop
-endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-wide' ) then begin
+endif else if ( is_spc ) then begin
 	n = n_big
 	wavefront = trim(wavefront,n)
 	fits_read, fpm_file, fpm

@@ -30,10 +30,10 @@ wfirst_cgi/data_phaseb/spc_20190130/**
 wfirst_cgi/data_phaseb/spc_20181220/**
 wfirst_cgi/data_phaseb/hlc_20190210/**
 wfirst_cgi/data_phaseb/hlc_20190206_v3/**
-wfirst_cgi/data_phaseb/spc_ifs_custom/**
+wfirst_cgi/data_phaseb/spc_spec_custom/**
 wfirst_cgi/data_phaseb/spc_wfov_custom/**
 wfirst_cgi/data_phaseb/hlc_custom/**
-!wfirst_cgi/data_phaseb/spc_ifs_custom/placeholder.txt
+!wfirst_cgi/data_phaseb/spc_spec_custom/placeholder.txt
 !wfirst_cgi/data_phaseb/spc_wfov_custom/placeholder.txt
 !wfirst_cgi/data_phaseb/hlc_custom/placeholder.txt
 

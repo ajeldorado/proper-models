@@ -1,7 +1,7 @@
 WFIRST coronagraph Phase B PROPER model for Matlab 
 Original IDL code by John Krist (JPL)
 Translation to Matlab by Hanying Zhou (JPL)
-28 May 2019
+7 October 2019
 
 This directory contains routines for the Matlab version of the Phase B
 coronagraph model for PROPER.  
@@ -67,11 +67,11 @@ run_hlc.m
 run_hlc_erkin.m
   Generate unaberrated Erkin's HLC using default DM wavefront patterns.
 
-run_spc_ifs.m
-  Generate unaberrated SPC-IFS model (long bandpass).
+run_spc_spec.m
+  Generate unaberrated and EFC-corrected SPC-IFS models (long bandpass).
 
 run_spc_wide.m
-  Generate unaberrated SPC wide-FOV model.
+  Generate unaberrated and EFC-corrected SPC wide-FOV models.
 
 -----------
 DM settings
@@ -90,4 +90,10 @@ hlc_dm1.fits, hlc_dm2.fits
 hlc_with_aberrations_dm1.fits, hlc_with_aberrations_dm2.fits
   DM1 & DM2 pistons (meters) corresponding to an aberrated solution for
   Dwight's HLC, including polarization. Use with use_errors=1 and polaxis=10.
+
+spc-wide_with_aberrations_dm1.fits, spc-wide_with_aberrations_dm2.fits,
+spc-spec_long_with_aberrations_dm1.fits, spc-spec_long_with_aberrations_dm2.fits
+  DM1 & DM2 pistons (meters) corresponding to an aberration solution for
+  the wide-field SPC (band 4) and SPC SPEC (band 3), including polarization.
+  Use with use_errors=1 and polaxis=10.
  

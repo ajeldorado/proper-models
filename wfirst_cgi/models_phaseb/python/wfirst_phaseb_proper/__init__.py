@@ -6,7 +6,7 @@ import os.path as _osp
 
 lib_dir = _osp.abspath(_osp.dirname(__file__))
 
-__version__ = '1.2'
+__version__ = '1.5'
 
 # from .wfirst_phaseb import wfirst_phaseb
 # from .wfirst_phaseb_compact import wfirst_phaseb_compact
@@ -21,3 +21,4 @@ from .set_data_dir import set_data_dir
 map_dir =  '/maps/'
 polfile = '/pol/new_toma'
 
+data_dir ="/home/krist/afta/phaseb/phaseb_data"

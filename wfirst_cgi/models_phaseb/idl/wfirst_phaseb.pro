@@ -25,6 +25,10 @@
 ;--		  Added Erkin's HLC design.  dm_sampling set to 0.9906 mm.
 ;-- Version 1.2, JEK
 ;--    Changes: Added data_dir directory variable
+;-- Version 1.4, 25 Sept 2019, JEK
+;--    Changes: Added optional use_pupil_mask parameter (SPC modes only)
+;-- Version 1.5, 7 Oct 2019, JEK
+;--    Changes: Aliased spc-spec_* to spc-ifs_*
 
 pro wfirst_phaseb, wavefront, lambda_m, output_dim0, sampling_m, PASSVALUE=optval
 
@@ -45,7 +49,7 @@ if ( n_elements(optval) ne 0 ) then if ( tag_exists('data_dir',optval) ) then da
 map_dir = data_dir + '/maps/'		;-- directory for surface maps
 polfile = data_dir + '/pol/new_toma'	;-- polarization aberration table rootname
 
-cor_type = 'hlc'		;-- 'hlc', 'spc-ifs_short', 'spc-ifs_long', 'spc-wide', or 'none' (none = clear aperture, no coronagraph)
+cor_type = 'hlc'		;-- 'hlc', 'spc-spec_short', 'spc-spec_long', 'spc-wide', or 'none' (none = clear aperture, no coronagraph)
 source_x_offset_mas = 0		;-- source offset in milliarcsec (tilt applied at primary)
 source_y_offset_mas = 0
 source_x_offset = 0		;-- source offset in lambda0_m/D radians (tilt applied at primary)
@@ -86,6 +90,7 @@ dm2_yc_act = 23.5d
 dm2_xtilt_deg = 0   
 dm2_ytilt_deg = 5.7d
 dm2_ztilt_deg = 0
+use_pupil_mask = 1		;-- use SPC pupil mask (not used for non-SPC modes); 0 or 1
 mask_x_shift_pupdiam = 0	;-- X,Y shift of shaped pupil mask; normalized relative to pupil diameter
 mask_y_shift_pupdiam = 0
 mask_x_shift_m = 0		;-- X,Y shift of shaped pupil mask in meters
@@ -120,7 +125,11 @@ if ( n_elements(optval) ne 0 ) then begin
 	if ( tag_exists('fpm_axis',optval) ) then fpm_axis = optval.fpm_axis
 endif
 
+is_spc = 0
+is_hlc = 0
+
 if ( cor_type eq 'hlc' ) then begin
+	is_hlc = 1
         file_directory = data_dir + '/hlc_20190210/'         ;-- must have trailing "/"
         prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
@@ -147,6 +156,7 @@ if ( cor_type eq 'hlc' ) then begin
 	n_from_lyotstop = 1024
 	field_stop_radius_lam0 = 9.0
 endif else if ( cor_type eq 'hlc_erkin' ) then begin
+	is_hlc = 1
         file_directory = data_dir + '/hlc_20190206_v3/'         ;-- must have trailing "/"
         prefix = file_directory + 'dsn17d_run2_pup310_fpm2048_'
         pupil_diam_pix = 310.0
@@ -171,14 +181,15 @@ endif else if ( cor_type eq 'hlc_erkin' ) then begin
 	if ( use_fpm ne 0 ) then n_to_fpm = 2048 else n_to_fpm = 1024
 	n_from_lyotstop = 1024
 	field_stop_radius_lam0 = 9.0
-endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' ) then begin
+endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-spec_short' or cor_type eq 'spc-spec_long' ) then begin
+	is_spc = 1
         file_dir = data_dir + '/spc_20190130/'       ;-- must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20190130_rotated.fits'
         pupil_mask_file = file_dir + 'SPM_SPC-20190130.fits'
         fpm_file = file_dir + 'fpm_0.05lamdivD.fits'
         fpm_sampling = 0.05d       	;-- sampling in fpm_sampling_lambda_m/D of FPM mask
-	if ( cor_type eq 'spc-ifs_short' ) then begin
+	if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-spec_short' ) then begin
 		fpm_sampling_lambda_m = 0.66d-6	
         	lambda0_m = 0.66d-6 
 	endif else begin	
@@ -191,6 +202,7 @@ endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' ) then
 	n_mft = 1400
 	n_from_lyotstop = 4096 
 endif else if ( cor_type eq 'spc-wide' ) then begin
+	is_spc = 1
         file_dir = data_dir + '/spc_20181220/'       ;-- must have trailing "/"
         pupil_diam_pix = 1000.0
         pupil_file = file_dir + 'pupil_SPC-20181220_1k_rotated.fits'
@@ -258,6 +270,7 @@ if ( n_elements(optval) ne 0 ) then begin
 	if ( tag_exists('dm2_xtilt_deg',optval) ) then dm2_xtilt_deg = optval.dm2_xtilt_deg
 	if ( tag_exists('dm2_ytilt_deg',optval) ) then dm2_ytilt_deg = optval.dm2_ytilt_deg
 	if ( tag_exists('dm2_ztilt_deg',optval) ) then dm2_ztilt_deg = optval.dm2_ztilt_deg
+	if ( tag_exists('use_pupil_mask',optval) ) then use_pupil_mask = optval.use_pupil_mask
         if ( tag_exists('mask_x_shift_pupdiam',optval) ) then mask_x_shift_pupdiam = optval.mask_x_shift_pupdiam
         if ( tag_exists('mask_y_shift_pupdiam',optval) ) then mask_y_shift_pupdiam = optval.mask_y_shift_pupdiam
         if ( tag_exists('mask_x_shift_m',optval) ) then mask_x_shift_m = optval.mask_x_shift_m
@@ -472,7 +485,7 @@ prop_propagate, wavefront, d_focm_oap2+focm_z_shift_m, 'OAP2'
 prop_propagate, wavefront, d_oap2_dm1, 'DM1'
    if ( use_dm1 ) then prop_dm, wavefront, dm1_m, dm1_xc_act, dm1_yc_act, dm_sampling_m, XTILT=dm1_xtilt_deg, YTILT=dm1_ytilt_deg, ZTILT=dm1_ztilt_deg
    if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_DM1_phase_error_V1.0.fits', /WAVEFRONT
-   if ( (cor_type eq 'hlc' or cor_type eq 'hlc_erkin') and use_hlc_dm_patterns ) then begin
+   if ( is_hlc and use_hlc_dm_patterns ) then begin
    	fits_read, prefix+'dm1wfe.fits', dm1wfe
     	prop_add_phase, wavefront, trim(dm1wfe, n)
    	dm1wfe = 0
@@ -481,7 +494,7 @@ prop_propagate, wavefront, d_oap2_dm1, 'DM1'
 prop_propagate, wavefront, d_dm1_dm2, 'DM2'
    if ( use_dm2 ) then prop_dm, wavefront, dm2_m, dm2_xc_act, dm2_yc_act, dm_sampling_m, XTILT=dm2_xtilt_deg, YTILT=dm2_ytilt_deg, ZTILT=dm2_ztilt_deg
    if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_DM2_phase_error_V1.0.fits', /WAVEFRONT
-   if ( cor_type eq 'hlc' or cor_type eq 'hlc_erkin' ) then begin
+   if ( is_hlc ) then begin
 	if ( use_hlc_dm_patterns ) then begin
    		fits_read, prefix+'dm2wfe.fits', dm2wfe
     		prop_add_phase, wavefront, trim(dm2wfe, n)
@@ -507,7 +520,7 @@ prop_propagate, wavefront, d_fold3_oap4, 'OAP4'
    if ( use_aperture ) then prop_circular_aperture, wavefront, diam_oap4/2
 
 prop_propagate, wavefront, d_oap4_pupilmask, 'PUPIL_MASK'	;-- flat/reflective shaped pupil 
-   if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-wide' ) then begin
+   if ( use_pupil_mask and is_spc ) then begin
 	fits_read, pupil_mask_file, pupil_mask
 	pupil_mask = trim(pupil_mask, n)
 	if ( mask_x_shift_pupdiam ne 0 or mask_y_shift_pupdiam ne 0 or mask_x_shift_m ne 0 or mask_y_shift_m ne 0 ) then begin
@@ -575,7 +588,7 @@ prop_propagate, wavefront, d_oap5_fpm+fpm_z_shift_m, 'FPM', /TO_PLANE
 		wavefront.wavefront = prop_shift_center(wavefront0)
 		wavefront0 = 0
 	endif
-	if ( cor_type eq 'hlc' or cor_type eq 'hlc_erkin' ) then begin
+	if ( is_hlc ) then begin
         	fits_read, occulter_file_r, occ_r
         	fits_read, occulter_file_i, occ_i
 		occ = dcomplex(occ_r,occ_i)
@@ -583,7 +596,7 @@ prop_propagate, wavefront, d_oap5_fpm+fpm_z_shift_m, 'FPM', /TO_PLANE
 		occ_r = 0
 		occ_i = 0
 		occ = 0
-	endif else if ( cor_type eq 'spc-ifs_short' or cor_type eq 'spc-ifs_long' or cor_type eq 'spc-wide' ) then begin
+	endif else if ( is_spc ) then begin
 		;-- super-sample FPM
 		wavefront0 = prop_get_wavefront( wavefront )
                 wavefront0 = fftsi(wavefront0,+1,NTHREADS=1)                              ;-- to virtual pupil
@@ -687,7 +700,7 @@ prop_propagate, wavefront, d_lyotstop_oap7, 'OAP7'
    if ( use_aperture ) then prop_circular_aperture, wavefront, diam_oap7/2  
 
 prop_propagate, wavefront, d_oap7_fieldstop, 'FIELD_STOP'
-   if ( use_field_stop and (cor_type eq 'hlc' or cor_type eq 'hlc_erkin') ) then begin
+   if ( use_field_stop and is_hlc ) then begin
         sampling_lamD = double(pupil_diam_pix) / n      ;-- sampling at focus in lambda_m/D
         stop_radius = field_stop_radius_lam0 / sampling_lamD * (lambda0_m/lambda_m) * prop_get_sampling(wavefront)
         prop_circular_aperture, wavefront, stop_radius

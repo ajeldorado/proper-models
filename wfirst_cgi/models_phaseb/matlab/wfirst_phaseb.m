@@ -25,6 +25,13 @@
 %		  730 nm FPM.  Rotated SPC masks to match orientation of pupil in HLC.
 %		  Added Erkin's HLC design.  dm_sampling set to 0.9906 mm.
 %
+% Version 1.4, 25 Sept 2019, JEK
+%    Changes: Added optional use_pupil_mask parameter; fixed error that omitted pupil mask
+%    if end_at_fpm_exit_pupil was set (Matlab only) 
+%
+% Version 1.5, 7 Oct 2019, JKE
+%    Changes: Aliased spc-spec_* to spc-ifs_*
+
 % Based on Zemax prescription "WFIRST_CGI_DI_LOWFS_Sep24_2018.zmx" by Hong Tang.
 % IDL version (original), John E Krist
 % Matlab translation, 3/1/2019, Hanying Zhou
@@ -50,7 +57,7 @@ function [wavefront,  sampling_m]= wfirst_phaseb(lambda_m, output_dim0, optval)
 
 %--mask design data path
 
-data_dir = '/home/krist/afta/phaseb/phaseb_data'  % no trailing '/'
+data_dir = '/home/krist/afta/phaseb/phaseb_data';  % no trailing '/'
 
 if ( isfield(optval,'data_dir') )
     data_dir = optval.data_dir;
@@ -62,7 +69,7 @@ end
 map_dir = [data_dir '/maps/'];            % directory for surface maps
 polfile = [data_dir '/pol/new_toma_'];		% polarization aberration table rootname
 
-cor_type = 'hlc';           % 'hlc', 'spc-ifs', 'spc-wide', || 'none' (none = clear aperture, no coronagraph)
+cor_type = 'hlc';           % 'hlc', 'hlc_erkin', 'spc-spec_short', 'spc-spec_long', 'spc-wide', || 'none' (none = clear aperture, no coronagraph)
 source_x_offset_mas = 0;	% source offset in milliarcsec (tilt applied at primary)
 source_y_offset_mas = 0;
 source_x_offset = 0;		% source offset in lambda0_m/D radians (tilt applied at primary)
@@ -103,6 +110,7 @@ dm2_yc_act = 23.5;
 dm2_xtilt_deg = 0;
 dm2_ytilt_deg = 5.7;
 dm2_ztilt_deg = 0;
+use_pupil_mask = 1;		% (SPC only) Use SPC pupil mask (0 or 1)
 mask_x_shift_pupdiam = 0;	% X,Y shift of shaped pupil mask; normalized relative to pupil diameter
 mask_y_shift_pupdiam = 0;
 mask_x_shift_m = 0;         % X,Y shift of shaped pupil mask; 
@@ -138,7 +146,11 @@ if exist('optval','var')==1 %if  exist('optval')
     if ( isfield(optval,'fpm_axis') );   fpm_axis = optval.fpm_axis; end
 end
 
+is_hlc = 0;
+is_spc = 0;
+
 if  strcmp(cor_type,'hlc')
+    is_hlc = 1;
     file_directory = [data_dir '/hlc_20190210/'];         % must have trailing "/"
     prefix = [file_directory  'run461_'];
     pupil_diam_pix = 309.0;
@@ -156,6 +168,7 @@ if  strcmp(cor_type,'hlc')
     n_from_lyotstop = 1024;
     field_stop_radius_lam0 = 9.0;
 elseif  strcmp(cor_type,'hlc_erkin')
+    is_hlc = 1;
     file_directory = [data_dir '/hlc_20190206_v3/'];         % must have trailing "/"
     prefix = [file_directory  'dsn17d_run2_pup310_fpm2048_'];
     pupil_diam_pix = 310.0;
@@ -175,6 +188,7 @@ elseif  strcmp(cor_type,'hlc_erkin')
     n_from_lyotstop = 1024;
     field_stop_radius_lam0 = 9.0;
 elseif(strcmpi(cor_type, 'spc_ifs_custom')) 
+    is_spc = 1;
     pupil_file = optval.pupil_file;
     pupil_diam_pix = optval.pupil_diam_pix; %1000;
     pupil_mask_file = optval.pupil_mask_file;% [file_dir  'SPM_SPC-20190130.fits']; %--SPM file name
@@ -187,8 +201,8 @@ elseif(strcmpi(cor_type, 'spc_ifs_custom'))
     n_to_fpm = 2048;            % gridsize to/from FPM
     n_mft = 1400;
     n_from_lyotstop = 4096;
-    
-elseif  sum(strfind(cor_type, 'spc-ifs' ))
+elseif  sum(strfind(cor_type, 'spc-ifs')) || sum(strfind(cor_type, 'spc-spec'))
+    is_spc = 1;
     file_dir = [data_dir '/spc_20190130/'];       % must have trailing "/"
     pupil_diam_pix = 1000;
     pupil_file = [file_dir  'pupil_SPC-20190130_rotated.fits'];
@@ -197,12 +211,13 @@ elseif  sum(strfind(cor_type, 'spc-ifs' ))
     fpm_sampling_lam0 = 0.05; 	% sampling in lambda0/D of FPM mask
     lyot_stop_file = [file_dir  'LS_SPC-20190130.fits'];
     lambda0_m = 0.73e-6;        % FPM scaled for this central wavelength
-    if strcmp(cor_type, 'spc-ifs_short'); lambda0_m = 0.66e-6;  end      
+    if strcmp(cor_type, 'spc-ifs_short') || strcmp(cor_type, 'spc-spec_short'); lambda0_m = 0.66e-6;  end      
     n_default = 2048;           % gridsize in non-critical areas
     n_to_fpm = 2048;            % gridsize to/from FPM
     n_mft = 1400;
     n_from_lyotstop = 4096;
 elseif  strcmp(cor_type, 'spc-wide' )
+    is_spc = 1;
     file_dir = [data_dir '/spc_20181220/'];       % must have trailing "/"
     pupil_diam_pix = 1000;
     pupil_file = [file_dir  'pupil_SPC-20181220_1k_rotated.fits'];
@@ -269,6 +284,7 @@ if(exist('optval','var')==1) %if exist('optval')
     if ( isfield(optval,'dm2_xtilt_deg') );  dm2_xtilt_deg = optval.dm2_xtilt_deg; end
     if ( isfield(optval,'dm2_ytilt_deg') );  dm2_ytilt_deg = optval.dm2_ytilt_deg; end
     if ( isfield(optval,'dm2_ztilt_deg') );  dm2_ztilt_deg = optval.dm2_ztilt_deg; end
+    if ( isfield(optval,'use_pupil_mask') );  use_pupil_mask = optval.use_pupil_mask; end
     if ( isfield(optval,'mask_x_shift_pupdiam') );   mask_x_shift_pupdiam = optval.mask_x_shift_pupdiam; end
     if ( isfield(optval,'mask_y_shift_pupdiam') );   mask_y_shift_pupdiam = optval.mask_y_shift_pupdiam; end
     if ( isfield(optval,'mask_x_shift_m') );     mask_x_shift_m = optval.mask_x_shift_m; end
@@ -477,7 +493,7 @@ if ( use_aperture );   wavefront = prop_circular_aperture(wavefront, diam_oap2/2
 wavefront = prop_propagate(wavefront, d_oap2_dm1, 'surface_name','DM1');
 if ( use_dm1 ); wavefront = prop_dm(wavefront, dm1_m, dm1_xc_act, dm1_yc_act, dm_sampling_m, 'xtilt',dm1_xtilt_deg, 'ytilt',dm1_ytilt_deg, 'ztilt',dm1_ztilt_deg); end
 if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb_DM1_phase_error_V1.0.fits'], 'wavefront');end
-if ( contains(cor_type,'hlc')  && use_hlc_dm_patterns ) %if ( ~isempty(strfind(cor_type,'hlc'))  && use_hlc_dm_patterns ),
+if ( is_hlc && use_hlc_dm_patterns ) %if ( ~isempty(strfind(cor_type,'hlc'))  && use_hlc_dm_patterns ),
     dm1wfe = fitsread( [prefix 'dm1wfe.fits']);
     wavefront = prop_add_phase(wavefront, custom_pad(dm1wfe, n));
     clear dm1wfe 
@@ -486,7 +502,7 @@ end
 wavefront = prop_propagate(wavefront, d_dm1_dm2, 'surface_name','DM2');
 if ( use_dm2 );   wavefront = prop_dm(wavefront, dm2_m, dm2_xc_act, dm2_yc_act, dm_sampling_m, 'ztilt',dm2_xtilt_deg, 'ytilt',dm2_ytilt_deg, 'ztilt',dm2_ztilt_deg);end
 if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb_DM2_phase_error_V1.0.fits'], 'wavefront');end
-if ( contains(cor_type,'hlc')  ) %if ( strfind(cor_type,'hlc')  )
+if ( is_hlc ) 
     if ( use_hlc_dm_patterns )
         dm2wfe =fitsread( [prefix 'dm2wfe.fits']);
         wavefront = prop_add_phase(wavefront, custom_pad(dm2wfe, n));
@@ -512,9 +528,8 @@ if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb
 if ( use_aperture );   wavefront = prop_circular_aperture(wavefront, diam_oap4/2);  end
 
 wavefront = prop_propagate(wavefront, d_oap4_pupilmask,'surface_name', 'PUPIL_MASK');	% flat/reflective shaped pupil
-if ( contains(cor_type,'spc') && ~end_at_fpm_exit_pupil ) %if ( ~isempty(strfind(cor_type,'spc') ) && ~end_at_fpm_exit_pupil )
+if ( is_spc && use_pupil_mask ~= 0 ) 
     pupil_mask = custom_pad(fitsread( pupil_mask_file),n);
-    
     if ( mask_x_shift_pupdiam ~=0 || mask_y_shift_pupdiam ~=0  || mask_x_shift_m ~=0 || mask_y_shift_m ~=0)
         %shift SP mask by FFTing it, applying tilt, and FFTing back
         x = repmat( ([1:n]-n/2-1) / (pupil_diam_pix/2), n, 1 );
@@ -527,12 +542,11 @@ if ( contains(cor_type,'spc') && ~end_at_fpm_exit_pupil ) %if ( ~isempty(strfind
         pupil_mask = fftshift( fft2(pupil_mask) );
         clear x tilt 
     end
-    
     wavefront = prop_multiply(wavefront, pupil_mask);
     clear pupil_mask 
 end
-
 if ( use_errors );   wavefront = prop_errormap(wavefront,[map_dir 'wfirst_phaseb_PUPILMASK_phase_error_V1.0.fits'], 'wavefront'); end
+
 % while at a pupil, use more padding to provide better sampling at FPM
 diam = 2 * prop_get_beamradius(wavefront);
 wavefront = prop_end(wavefront, 'noabs');
@@ -563,11 +577,11 @@ if ( use_fpm )
         clear x 
     end
     
-    if ( contains(cor_type,'hlc')  )
+    if ( is_hlc )
         occ = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
         wavefront = prop_multiply(wavefront, custom_pad(occ,n));
         clear occ
-    elseif ( contains(cor_type,'spc')  )
+    elseif ( is_spc )
         % super-sample FPM
         wavefront0 = custom_pad(ifftshift(fft2(wavefront.wf)), n_mft);  % to virtual pupil
         fpm = fitsread( fpm_file);
