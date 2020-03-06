@@ -29,6 +29,11 @@
 ;--    Changes: Added optional use_pupil_mask parameter (SPC modes only)
 ;-- Version 1.5, 7 Oct 2019, JEK
 ;--    Changes: Aliased spc-spec_* to spc-ifs_*
+;-- Version 1.6, 18 Oct 2019, JEK
+;--    Changes: Added option to shift field stop (HLC)
+;-- Version 1.7, 3 Dec 2019, JEK
+;--    Changes: Replaced defocus-vs-focal-length table with revised version; added logic to
+;--             force planar propagation when requested defocus is <=4 waves.
 
 pro wfirst_phaseb, wavefront, lambda_m, output_dim0, sampling_m, PASSVALUE=optval
 
@@ -112,6 +117,10 @@ lyot_x_shift_m = 0		;-- X,Y shift of Lyot stop mask in meters
 lyot_y_shift_m = 0
 use_field_stop = 1		;-- use field stop (HLC)? 1 or 0
 field_stop_radius_lam0 = 0	;-- field stop radius in lambda0/D (HLC or SPC-wide mask only)
+field_stop_x_offset = 0		;-- field stop offset in lambda0/D
+field_stop_y_offset = 0
+field_stop_x_offset_m = 0	;-- field stop offset in meters
+field_stop_y_offset_m = 0
 use_pupil_lens = 0		;-- use pupil imaging lens?
 use_defocus_lens = 0		;-- use defocusing lens? Options are 1, 2, 3, 4, corresponding to +18.0, +9.0, -4.0, -8.0 waves P-V @ 550 nm 
 defocus = 0			;-- instead of specific lens, defocus in waves P-V @ 550 nm (-8.7 to 42.0 waves)
@@ -217,10 +226,11 @@ endif else if ( cor_type eq 'spc-wide' ) then begin
 	n_mft = 1400
 	n_from_lyotstop = 4096 
 endif else if ( cor_type eq 'none' ) then begin
+        lambda0_m = 0.575d-6
         file_directory = data_dir + '/hlc_20190210/'         ;-- must have trailing "/"
         prefix = file_directory + 'run461_' 
         pupil_diam_pix = 309.0
-        pupil_file = prefix + 'pupil_rotated.fits'
+	pupil_file = prefix + 'pupil_rotated.fits'
 	use_fpm = 0
 	use_lyot_stop = 0
 	use_field_stop = 0
@@ -290,6 +300,10 @@ if ( n_elements(optval) ne 0 ) then begin
         if ( tag_exists('lyot_y_shift_m',optval) ) then lyot_y_shift_m = optval.lyot_y_shift_m
 	if ( tag_exists('use_field_stop',optval) ) then use_field_stop = optval.use_field_stop
 	if ( tag_exists('field_stop_radius_lam0',optval) ) then field_stop_radius_lam0 = optval.field_stop_radius_lam0
+	if ( tag_exists('field_stop_x_offset',optval) ) then field_stop_x_offset = optval.field_stop_x_offset
+	if ( tag_exists('field_stop_y_offset',optval) ) then field_stop_y_offset = optval.field_stop_y_offset
+	if ( tag_exists('field_stop_x_offset_m',optval) ) then field_stop_x_offset_m = optval.field_stop_x_offset_m
+	if ( tag_exists('field_stop_y_offset_m',optval) ) then field_stop_y_offset_m = optval.field_stop_y_offset_m
 	if ( tag_exists('use_pupil_lens',optval) ) then use_pupil_lens = optval.use_pupil_lens
 	if ( tag_exists('use_defocus_lens',optval) ) then use_defocus_lens = optval.use_defocus_lens
 	if ( tag_exists('defocus',optval) ) then defocus = optval.defocus
@@ -703,13 +717,26 @@ prop_propagate, wavefront, d_oap7_fieldstop, 'FIELD_STOP'
    if ( use_field_stop and is_hlc ) then begin
         sampling_lamD = double(pupil_diam_pix) / n      ;-- sampling at focus in lambda_m/D
         stop_radius = field_stop_radius_lam0 / sampling_lamD * (lambda0_m/lambda_m) * prop_get_sampling(wavefront)
-        prop_circular_aperture, wavefront, stop_radius
+	if ( field_stop_x_offset ne 0 or field_stop_y_offset ne 0 ) then begin
+		;-- convert offsets in lambda0/D to meters
+		x_offset_lamD = field_stop_x_offset * lambda0_m / lambda_m
+		y_offset_lamD = field_stop_y_offset * lambda0_m / lambda_m
+		pupil_ratio = double(pupil_diam_pix) / n
+		field_stop_x_offset_m = x_offset_lamD / pupil_ratio * prop_get_sampling(wavefront)
+		field_stop_y_offset_m = y_offset_lamD / pupil_ratio * prop_get_sampling(wavefront)
+	endif
+        prop_circular_aperture, wavefront, stop_radius, -field_stop_x_offset_m, -field_stop_y_offset_m
    endif
 
 prop_propagate, wavefront, d_fieldstop_oap8, 'OAP8'
    prop_lens, wavefront, fl_oap8
    if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_OAP8_phase_error_V1.0.fits', /WAVEFRONT
    if ( use_aperture ) then prop_circular_aperture, wavefront, diam_oap8/2  
+
+d = double_lens( d_lyotstop_oap7, fl_oap7, d_oap7_fieldstop+d_fieldstop_oap8, fl_oap8 )
+d_oap8_lens = d_oap8_filter + d_filter_lens
+d_oap8_filter = d
+d_filter_lens = d_oap8_lens - d_oap8_filter
 
 prop_propagate, wavefront, d_oap8_filter, 'filter'
    if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_FILTER_phase_error_V1.0.fits', /WAVEFRONT
@@ -727,19 +754,28 @@ prop_propagate, wavefront, d_filter_lens, 'LENS'
    		if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_PUPILLENS_phase_error_V1.0.fits', /WAVEFRONT
 	   endif else begin
 		;-- table is waves P-V @ 575 nm
-		z4_pv_waves = [    -8.993, -8.868, -8.539, -8.336, -7.979, -7.461, -6.802, -5.877, -5.030, -3.845, -2.493,  0.000,  3.011,  9.943, 20.414, 28.687, 43.354, 55.956 ]
-		fl_defocus_lens = [ 5.000,  3.500,  2.000,  1.600,  1.200,  0.900,  0.700,  0.550,  0.470,  0.400,  0.350,  0.296,  0.260,  0.220,  0.195,  0.185,  0.175, 0.170 ]
-		z6_rms_waves = [    0.000,  0.030,  0.030,  0.029,  0.027,  0.026,  0.023,  0.020,  0.017,  0.013,  0.008, -0.002, -0.013, -0.038, -0.076, -0.107, -0.160, -0.206 ]
+		z4_pv_waves =     [-9.0545,-8.5543,-8.3550,-8.0300,-7.54500,-7.03350,-6.03300,-5.03300,-4.02000,$
+				   -2.51980,0.00000000,3.028000,4.95000,6.353600,8.030000,10.10500,12.06000,14.06000,20.26000,28.34000,40.77500,56.65700]  
+		fl_defocus_lens = [5.09118,1.89323,1.54206,1.21198,0.914799,0.743569,0.567599,0.470213,0.406973,$
+				   0.350755,0.29601868,0.260092,0.24516,0.236606,0.228181,0.219748,0.213278,0.207816,0.195536,0.185600,0.176629,0.169984]  
+		;-- subtract ad-hoc function to make z4 vs f_length more accurately spline interpolatible
+		f = fl_defocus_lens / 0.005
+		f0 = 59.203738
+		z4t = z4_pv_waves - (0.005*(f0-f-40))/f^2/0.575e-6
 		if ( use_defocus_lens ne 0 ) then begin	;-- defocus lens (1-4)
 			;-- use one of 4 defocusing lenses
-			defocus = [ 18.0, 9.0, -4.0, -8.0 ]	;-- waves P-V @ 550
-			lens_fl = interpol( fl_defocus_lens, z4_pv_waves, defocus, /SPLINE )	
-   			prop_lens, wavefront, lens_fl[use_defocus_lens-1] 
+			defocus = [ 18.0, 9.0, -4.0, -8.0 ]	;-- waves P-V @ 575 nm
+			z4x = interpol(z4t, z4_pv_waves, defocus, /spline)
+			lens_fl = interpol( fl_defocus_lens, z4t, z4x, /spline )	
+   			prop_lens, wavefront, lens_fl[use_defocus_lens-1]
    			if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_DEFOCUSLENS' + $
 				strtrim(string(use_defocus_lens),2) + '_phase_error_V1.0.fits', /WAVEFRONT
+			lens_fl = lens_fl[use_defocus_lens-1] 
+			defocus = defocus[use_defocus_lens-1]
 	   	endif else begin
 			;-- specify amount of defocus (P-V waves @ 575 nm)
-			lens_fl = interpol( fl_defocus_lens, z4_pv_waves, defocus, /SPLINE )	
+			z4x = interpol(z4t, z4_pv_waves, defocus, /spline)
+			lens_fl = interpol( fl_defocus_lens, z4t, z4x, /spline )	
    			prop_lens, wavefront, lens_fl 
    			if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_DEFOCUSLENS1_phase_error_V1.0.fits', /WAVEFRONT
 		endelse
@@ -751,7 +787,15 @@ prop_propagate, wavefront, d_lens_fold4, 'FOLD_4'
    if ( use_errors ) then prop_errormap, wavefront, map_dir+'wfirst_phaseb_FOLD4_phase_error_V1.1.fits', /WAVEFRONT
    if ( use_aperture ) then prop_circular_aperture, wavefront, diam_fold4/2 
 
-prop_propagate, wavefront, d_fold4_image, 'IMAGE'
+if ( defocus ne 0 or use_defocus_lens ne 0 ) then begin
+	if ( abs(defocus) le 4 ) then begin
+		prop_propagate, wavefront, d_fold4_image, 'IMAGE', /TO_PLANE
+	endif else begin
+		prop_propagate, wavefront, d_fold4_image, 'IMAGE'
+	endelse
+endif else begin
+	prop_propagate, wavefront, d_fold4_image, 'IMAGE'
+endelse
 
 prop_end, wavefront, sampling_m, /NOABS
 

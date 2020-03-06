@@ -6,7 +6,7 @@ import os.path as _osp
 
 lib_dir = _osp.abspath(_osp.dirname(__file__))
 
-__version__ = '1.5'
+__version__ = '1.7'
 
 # from .wfirst_phaseb import wfirst_phaseb
 # from .wfirst_phaseb_compact import wfirst_phaseb_compact

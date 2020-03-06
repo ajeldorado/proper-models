@@ -14,11 +14,11 @@ ext_modules = []
 
 setup(
       name="wfirst_phaseb_proper",
-      version = "1.5",
+      version = "1.7",
       packages=find_packages(),
 
-      install_requires = ['numpy>=1.8', 'scipy>=0.14', 'astropy>=1.3', 'PyPROPER>=3.1;python_version<"3.0"', 
-        'PyPROPER3>=3.1;python_version>="3.0"'],
+      install_requires = ['numpy>=1.8', 'scipy>=0.19', 'astropy>=1.3', 'PyPROPER>=3.1.5;python_version<"3.0"', 
+        'PyPROPER3>=3.1.5;python_version>="3.0"'],
 
       package_data = {
         '': ['*.*']

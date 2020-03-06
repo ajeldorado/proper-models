@@ -29,6 +29,13 @@
 #      Added optional use_pupil_mask parameter (SPC only)
 #   Version 1.5, 25 Sept 2019, JEK
 #      Aliased spc-ifs_short and spc-ifs_long to spc-spec_short and spc-spec_long
+#   Version 1.6, 18 Oct 2019, JEK
+#      Changes: Added option to shift field stop (HLC)
+#   Version 1.6.1, 21 Nov 2019, JEK
+#      Fixed bug in shifting SPC mask when shift given in meters
+#   Version 1.7, 3 Dec 2019, JEK
+#      Changes: Replaced defocus-vs-focal-length table with revised version; added logic to
+#               force planar propagation when requested defocus is <=4 waves.
 
 import proper
 import numpy as np
@@ -130,7 +137,11 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     lyot_y_shift_m = 0  
     use_field_stop = 1          # use field stop (HLC)? 1 or 0
     field_stop_radius_lam0 = 0  # field stop radius in lambda0/D (HLC or SPC-wide mask only)
-    use_pupil_lens = 0          # use pupil imaging lens? 1 or 0
+    field_stop_x_offset = 0     # field stop offset in lambda0/D
+    field_stop_y_offset = 0
+    field_stop_x_offset_m = 0   # field stop offset in meters
+    field_stop_y_offset_m = 0
+    use_pupil_lens = 0          # use pupil imaging lens? 0 or 1
     use_defocus_lens = 0        # use defocusing lens? Options are 1, 2, 3, 4, corresponding to +18.0, +9.0, -4.0, -8.0 waves P-V @ 550 nm 
     defocus = 0                 # instead of specific lens, defocus in waves P-V @ 550 nm (-8.7 to 42.0 waves)
     final_sampling_m = 0        # final sampling in meters (overrides final_sampling_lam0)
@@ -237,6 +248,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         prefix = file_directory + 'run461_'
         pupil_diam_pix = 309.0
         pupil_file = prefix + 'pupil_rotated.fits'
+        lambda0_m = 0.575e-6
         use_fpm = 0
         use_lyot_stop = 0
         use_field_stop = 0
@@ -302,6 +314,10 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         if 'lyot_x_shift_m' in PASSVALUE: lyot_x_shift_m = PASSVALUE['lyot_x_shift_m']
         if 'lyot_y_shift_m' in PASSVALUE: lyot_y_shift_m = PASSVALUE['lyot_y_shift_m']
         if 'use_field_stop' in PASSVALUE: use_field_stop = PASSVALUE['use_field_stop']
+        if 'field_stop_x_offset' in PASSVALUE: field_stop_x_offset = PASSVALUE['field_stop_x_offset']
+        if 'field_stop_y_offset' in PASSVALUE: field_stop_y_offset = PASSVALUE['field_stop_y_offset']
+        if 'field_stop_x_offset_m' in PASSVALUE: field_stop_x_offset_m = PASSVALUE['field_stop_x_offset_m']
+        if 'field_stop_y_offset_m' in PASSVALUE: field_stop_y_offset_m = PASSVALUE['field_stop_y_offset_m']
         if 'use_pupil_lens' in PASSVALUE: use_pupil_lens = PASSVALUE['use_pupil_lens']
         if 'use_defocus_lens' in PASSVALUE: use_defocus_lens = PASSVALUE['use_defocus_lens']
         if 'defocus' in PASSVALUE: defocus = PASSVALUE['defocus']
@@ -530,7 +546,7 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         pupil_mask = trim( pupil_mask, n )
         if mask_x_shift_pupdiam != 0 or mask_y_shift_pupdiam != 0 or mask_x_shift_m != 0 or mask_y_shift_m != 0:
             # shift SP mask by FFTing it, applying tilt, and FFTing back 
-            if mask_x_shift_pupdiam != 0 or mask_y_shift_pupdiam != 0 or mask_x_shift_m != 0 or mask_y_shift_m != 0:
+            if mask_x_shift_pupdiam != 0 or mask_y_shift_pupdiam != 0:
                 # offsets are normalized to pupil diameter
                 xt = -mask_x_shift_pupdiam * pupil_diam_pix * float(pupil_diam_pix)/n
                 yt = -mask_y_shift_pupdiam * pupil_diam_pix * float(pupil_diam_pix)/n
@@ -706,7 +722,14 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     if use_field_stop != 0 and (cor_type == 'hlc' or cor_type == 'hlc_erkin'):
         sampling_lamD = float(pupil_diam_pix) / n      # sampling at focus in lambda_m/D
         stop_radius = field_stop_radius_lam0 / sampling_lamD * (lambda0_m/lambda_m) * proper.prop_get_sampling(wavefront)
-        proper.prop_circular_aperture( wavefront, stop_radius )
+        if field_stop_x_offset != 0 or field_stop_y_offset != 0:
+            # convert offsets in lambda0/D to meters
+            x_offset_lamD = field_stop_x_offset * lambda0_m / lambda_m
+            y_offset_lamD = field_stop_y_offset * lambda0_m / lambda_m
+            pupil_ratio = float(pupil_diam_pix) / n
+            field_stop_x_offset_m = x_offset_lamD / pupil_ratio * proper.prop_get_sampling(wavefront)
+            field_stop_y_offset_m = y_offset_lamD / pupil_ratio * proper.prop_get_sampling(wavefront)
+        proper.prop_circular_aperture( wavefront, stop_radius, -field_stop_x_offset_m, -field_stop_y_offset_m )
 
     proper.prop_propagate( wavefront, d_fieldstop_oap8, 'OAP8' )
     proper.prop_lens( wavefront, fl_oap8 )
@@ -728,20 +751,32 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
         if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_PUPILLENS_phase_error_V1.0.fits', WAVEFRONT=True )
     else:
         # table is waves P-V @ 575 nm
-        z4_pv_waves = np.array([    -8.993, -8.868, -8.539, -8.336, -7.979, -7.461, -6.802, -5.877, -5.030, -3.845, -2.493,  0.000,  3.011,  9.943, 20.414, 28.687, 43.354, 55.956 ] )
-        fl_defocus_lens = np.array([ 5.000,  3.500,  2.000,  1.600,  1.200,  0.900,  0.700,  0.550,  0.470,  0.400,  0.350,  0.296,  0.260,  0.220,  0.195,  0.185,  0.175, 0.170  ] )
-        z6_rms_waves = np.array([    0.000,  0.030,  0.030,  0.029,  0.027,  0.026,  0.023,  0.020,  0.017,  0.013,  0.008, -0.002, -0.013, -0.038, -0.076, -0.107, -0.160, -0.206 ] )
+        z4_pv_waves = np.array( [-9.0545,-8.5543,-8.3550,-8.0300,-7.54500,-7.03350,-6.03300,-5.03300,-4.02000,
+                                 -2.51980,0.00000000,3.028000,4.95000,6.353600,8.030000,10.10500,12.06000,
+                                 14.06000,20.26000,28.34000,40.77500,56.65700] )
+        fl_defocus_lens = np.array( [5.09118,1.89323,1.54206,1.21198,0.914799,0.743569,0.567599,0.470213,0.406973,
+                                     0.350755,0.29601868,0.260092,0.24516,0.236606,0.228181,0.219748,0.213278,
+                                     0.207816,0.195536,0.185600,0.176629,0.169984] )
+        # subtract ad-hoc function to make z4 vs f_length more accurately spline interpolatible
+        f = fl_defocus_lens / 0.005
+        f0 = 59.203738
+        z4t = z4_pv_waves - (0.005*(f0-f-40))/f**2/0.575e-6
         if use_defocus_lens != 0: 
             # use one of 4 defocusing lenses
-            defocus = np.array([ 18.0, 9.0, -4.0, -8.0 ])    # waves P-V @ 550
-            f = interp1d( z4_pv_waves, fl_defocus_lens, kind='cubic' )
-            lens_fl = f( defocus )
+            defocus = np.array([ 18.0, 9.0, -4.0, -8.0 ])    # waves P-V @ 575 nm
+            f = interp1d( z4_pv_waves, z4t, kind='cubic' )
+            z4x = f( defocus )
+            f = interp1d( z4t, fl_defocus_lens, kind='cubic' )
+            lens_fl = f( z4x )
             proper.prop_lens( wavefront, lens_fl[use_defocus_lens-1] ) 
             if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_DEFOCUSLENS'+str(use_defocus_lens)+'_phase_error_V1.0.fits', WAVEFRONT=True )
+            defocus = defocus[use_defocus_lens-1]
         else:
             # specify amount of defocus (P-V waves @ 575 nm)
-            f = interp1d( z4_pv_waves, fl_defocus_lens, kind='cubic' )
-            lens_fl = f( defocus )
+            f = interp1d( z4_pv_waves, z4t, kind='cubic' )
+            z4x = f( defocus )
+            f = interp1d( z4t, fl_defocus_lens, kind='cubic' )
+            lens_fl = f( z4x )
             proper.prop_lens( wavefront, lens_fl ) 
             if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_DEFOCUSLENS1_phase_error_V1.0.fits', WAVEFRONT=True )
     if use_aperture != 0: proper.prop_circular_aperture( wavefront, diam_lens/2.0 ) 
@@ -750,7 +785,13 @@ def wfirst_phaseb( lambda_m, output_dim0, PASSVALUE={'dummy':0} ):
     if use_errors != 0: proper.prop_errormap( wavefront, map_dir+'wfirst_phaseb_FOLD4_phase_error_V1.1.fits', WAVEFRONT=True )
     if use_aperture != 0: proper.prop_circular_aperture( wavefront, diam_fold4/2.0 ) 
 
-    proper.prop_propagate( wavefront, d_fold4_image, 'IMAGE' )
+    if defocus != 0 or use_defocus_lens != 0:
+        if np.abs(defocus) <= 4:
+            proper.prop_propagate( wavefront, d_fold4_image, 'IMAGE', TO_PLANE=True )
+        else:
+            proper.prop_propagate( wavefront, d_fold4_image, 'IMAGE' )
+    else:
+        proper.prop_propagate( wavefront, d_fold4_image, 'IMAGE' )
 
     (wavefront, sampling_m) = proper.prop_end( wavefront, NOABS=True )
 
