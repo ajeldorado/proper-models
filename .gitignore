@@ -1,5 +1,8 @@
 ##
 wfirst_cgi/models_phaseb/DoesNotSync/**
+wfirst_cgi/models_phaseb/python/wfirst_phaseb_proper.egg-info/**
+wfirst_cgi/models_phaseb/python/build/lib/**
+wfirst_cgi/models_phaseb/python/dist/**
 
 ## Compiled python
 *.pyc

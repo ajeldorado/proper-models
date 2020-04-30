@@ -21,4 +21,4 @@ from .set_data_dir import set_data_dir
 map_dir =  '/maps/'
 polfile = '/pol/new_toma'
 
-data_dir ="/home/krist/afta/phaseb/phaseb_data"
+data_dir ="/Users/ajriggs/Repos/proper-models/wfirst_cgi/data_phaseb"
