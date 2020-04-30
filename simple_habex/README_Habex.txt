@@ -16,7 +16,7 @@ mechanism of prop_run.  Check the file for available optional parameters.
 
 The user needs to change the map_dir variable to point to the directory
 containing the optical surface error maps. The maps are available for download
-at a separate website, LOCATION TBD.
+at a separate website, https://www.astro.caltech.edu/~gruane/maps.zip
 
 
 Example calls in IDL would be:
