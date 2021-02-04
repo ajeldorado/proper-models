@@ -38,7 +38,7 @@
 %   added a vortex as the focal plane mask.
 %%----------------------------------------------------------------------------------  
 
-function [wavefront, sampling_m] = habex(lambda_m, gridsize, optval)
+function [wavefront, sampling_m] = habex_multi_coro(lambda_m, gridsize, optval)
 
 nact = 64;                       %-- number of actuators across DM
 nact_across_pupil = 62;		%-- number of actuators across pupil       ##### NOT THE ACTUAL NUMBER ####
@@ -51,6 +51,7 @@ dm_sampling = 0.4e-3;            %-- DM actuator spacing (BMC)
 %-- default settings (override with optval)
 map_dir = '../maps/';	%-- directory containing optical surface error maps
 
+cor_type = 'vortex';%-- default coronagraph type
 lambda0_um = 0.5;	%-- default reference wavelength (center of bandpass) for star offsets & field stop size
 use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 zindex = 0;		%-- vector of Zernike indices (Noll ordered)
@@ -69,10 +70,11 @@ normLyotDiam = 0.95;    %-- Lyot stop outer diameter normalized to the beam diam
 vortexCharge = 6;   %-- charge of the vortex focal plane mask
 pupil_diam_pix = nact_across_pupil * 7.0; 	%-- define sampling of pupil based on having 7 pixels across each DM actuator
 use_pr = false; %-- whether to return a fake phase retrieval of the pupil rather than the focal plane
-
+use_hlc_dm_patterns = 0;	% use Dwight-generated HLC default DM wavefront patterns? 1 or 0
 %-- override defaults using values passed using optval structure
 
 if(exist('optval','var')==1)
+    if ( isfield(optval,'cor_type') );  cor_type = optval.cor_type;  end
     if ( isfield(optval,'lam0') );  lambda0_um = optval.lam0;  end
     if ( isfield(optval,'lambda0_um') );  lambda0_um = optval.lambda0_um;  end
     if ( isfield(optval,'use_errors') );  use_errors = optval.use_errors;  end
@@ -94,13 +96,56 @@ if(exist('optval','var')==1)
     if ( isfield(optval,'vortexCharge') );  vortexCharge = optval.vortexCharge;  end
     if ( isfield(optval,'map_dir') );  map_dir = optval.map_dir;  end
     if ( isfield(optval,'pupil_diam_pix') );  pupil_diam_pix = optval.pupil_diam_pix;  end
-    if ( isfield(optval,'pr_pupil_diam_pix') );  pr_pupil_diam_pix = optval.pr_pupil_diam_pix;  end
     if ( isfield(optval,'use_pr') );  use_pr = optval.use_pr;  end
+    if ( isfield(optval,'use_hlc_dm_patterns') );   use_hlc_dm_patterns = optval.use_hlc_dm_patterns; end
 end
+
 pr_pupil_diam_pix = pupil_diam_pix; %-- define sampling of pupil used for flattening phase with the DMs
+if(exist('optval','var')==1)
+    if ( isfield(optval,'pr_pupil_diam_pix') );  pr_pupil_diam_pix = optval.pr_pupil_diam_pix;  end
+end
+
 
 lambda0_m = lambda0_um * 1.0e-6;
 pupil_ratio = pupil_diam_pix / double(gridsize);
+
+is_vc = false;
+is_hlc = false;
+is_blc = false;
+if  strcmp(cor_type,'hlc')
+    is_hlc = true;
+    mask_dir = [optval.mask_dir filesep];
+    hlc_factor = 1.06318242311;
+    pupil_diam_pix = 314.581 / hlc_factor;
+    pr_pupil_diam_pix = pupil_diam_pix;
+    pupil_ratio = pupil_diam_pix / double(gridsize);
+    
+    dm1_ytilt_deg = 9.65;
+    dm2_ytilt_deg = 9.65;
+    
+%     dm_sampling = 0.4e-3 * 0.94942161; %(298.67/314.581);
+    
+    pupil_fn = [mask_dir  optval.pupil_fn];
+    lyot_stop_fn = [mask_dir  optval.lyot_stop_fn];
+    %lambda0_m = 0.575e-6;
+%     nlams = 9;              % number of occ trans lambda provided
+%     bw = 0.10;
+    nlams = optval.nlams;
+    bw = optval.bw;
+    fpm_aoi = optval.fpm_aoi;
+    fpm_pol = optval.fpm_pol;
+    lam_occ = linspace(1-bw/2, 1+bw/2, nlams)*lambda0_m; % wavelengths at which occ trans provided
+    wlam = find( round(1e13*lambda_m) == round(1e13*lam_occ) ); 	% find exactly matching FPM wavelength
+    occulter_file_r = [mask_dir 'run819_roman_occ_lam' num2str(lam_occ(wlam),12) sprintf('theta%spol%s_real.fits', fpm_aoi, fpm_pol)];
+    occulter_file_i = [mask_dir 'run819_roman_occ_lam' num2str(lam_occ(wlam),12) sprintf('theta%spol%s_imag.fits', fpm_aoi, fpm_pol)];
+    n_default = 1024;	% gridsize in non-critical areas
+    if  use_fpm;    n_to_fpm = 4096; else; n_to_fpm = 1024; end
+    n_from_lyotstop = 1024;
+elseif strcmpi(cor_type, 'vortex')
+    is_vc = true;
+elseif strcmpi(cor_type, 'blc') || strcmpi(cor_type, 'band-limited')
+    is_blc = true;
+end
 
 %-- define optical prescription (distances, focal lengths)
 
@@ -143,7 +188,14 @@ d_m10_ccd = fl_m10;
 
 
 wavefront = prop_begin(diam, lambda_m, gridsize, 'beam_diam_fraction', pupil_diam_pix/gridsize);
-wavefront = prop_circular_aperture(wavefront, diam/2);
+if is_vc || is_blc
+    wavefront = prop_circular_aperture(wavefront, diam/2);
+elseif is_hlc
+   pupil = pad_crop(fitsread(pupil_fn), gridsize);
+   wavefront = prop_multiply(wavefront, pupil);
+else
+    error('Coronagraph type not recognized.')
+end
 if( zindex(1) ~= 0);  wavefront = prop_zernikes(wavefront, zindex, zval);  end	%-- optionally add Zernikes
 if( (xoffset ~= 0) || (yoffset ~= 0) )
 	%-- star X,Y offset in lam0/D
@@ -185,13 +237,69 @@ wavefront = prop_propagate(wavefront, d_m4_m5, 'SURFACE_NAME', 'M5');
 if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_M5_phase_error.fits'], 'WAVEFRONT');  end
 wavefront = prop_lens(wavefront, fl_m5);
 
-wavefront = prop_propagate(wavefront, d_m5_dm1, 'SURFACE_NAME', 'DM1');
-if(use_dm1);  wavefront = prop_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling);  end
-if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM1_phase_error.fits'], 'WAVEFRONT');  end
+% wavefront = prop_propagate(wavefront, d_m5_dm1, 'SURFACE_NAME', 'DM1');
+% if(use_dm1);  [wavefront, map1] = prop_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling, 'ytilt', 9.65);  end
+% if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM1_phase_error.fits'], 'WAVEFRONT');  end
 
-wavefront = prop_propagate(wavefront, d_dm1_dm2, 'SURFACE_NAME', 'DM2');
-if(use_dm2);  wavefront = prop_dm(wavefront, dm2, dm_xc, dm_yc, dm_sampling);  end
-if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM2_phase_error.fits'], 'WAVEFRONT');  end
+% dm_sampling = 0.4e-3 * 0.94942161; %(298.67/314.581);
+% if(use_dm1);  [wavefront, map1] = prop_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling, 'ytilt', 9.65);  end
+% Ncrop = 400;
+% map1 = pad_crop(map1, Ncrop);
+% figure(601); imagesc(map1); axis xy equal tight; colorbar; drawnow;
+% map1true = fitsread('/Users/ajriggs/Documents/habex/run819/run819_roman_dm1wfe.fits');
+% map1true = pad_crop(map1true, Ncrop);
+% figure(602); imagesc(map1true/2); axis xy equal tight; colorbar; drawnow;
+% figure(603); imagesc(1e9*(map1 - map1true/2)); axis xy equal tight; colorbar; set(gca, 'Fontsize', 20); drawnow;
+% diff = 1e9*(map1 - map1true/2);
+% fprintf('%.3f\n', sum(abs(diff(:))));
+
+if is_hlc
+    
+    % to accommodate Dwight's Run 819 design
+    pitchRatio = 0.4/0.9906;
+    d_dm1_dm2 = 1.0 * (pitchRatio*pitchRatio); % meters
+    d_qwp_m6 = fl_m6 - (d_dm1_dm2 + d_dm2_qwp);
+    
+    wavefront = prop_propagate(wavefront, d_m5_dm1, 'SURFACE_NAME', 'DM1');
+    if(use_dm1);  wavefront = prop_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling, 'ytilt', dm1_ytilt_deg);  end
+    if (is_hlc  && use_hlc_dm_patterns)
+        dm1wfe = fitsread([mask_dir  optval.dm1wfe_fn]);
+        wavefront = prop_add_phase(wavefront, pad_crop(dm1wfe, gridsize));
+        clear dm1wfe 
+        
+%         wf0 = ifftshift(wavefront.wf);
+%         fitswrite(abs(wf0), '/Users/ajriggs/Downloads/absEdm1.fits');
+%         fitswrite(angle(wf0), '/Users/ajriggs/Downloads/angleEdm1.fits');
+        
+    end
+    if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM1_phase_error.fits'], 'WAVEFRONT');  end
+
+    wavefront = prop_propagate(wavefront, d_dm1_dm2, 'SURFACE_NAME', 'DM2');
+    if(use_dm2);  wavefront = prop_dm(wavefront, dm2, dm_xc, dm_yc, dm_sampling, 'ytilt', dm2_ytilt_deg);  end
+    if (is_hlc  && use_hlc_dm_patterns)
+        dm2wfe = fitsread([mask_dir  optval.dm2wfe_fn]);
+        wavefront = prop_add_phase(wavefront, pad_crop(dm2wfe, gridsize));
+        clear dm2wfe 
+    end
+    if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM2_phase_error.fits'], 'WAVEFRONT');  end
+
+%     wavefront = prop_propagate(wavefront, -d_dm1_dm2, 'SURFACE_NAME', 'DM1eff');
+%     wf0 = ifftshift(wavefront.wf);
+%     fitswrite(abs(wf0), '/Users/ajriggs/Downloads/absEdm1eff.fits');
+%     fitswrite(angle(wf0), '/Users/ajriggs/Downloads/angleEdm1eff.fits');
+%     disp('stop');
+    
+else
+    
+    wavefront = prop_propagate(wavefront, d_m5_dm1, 'SURFACE_NAME', 'DM1');
+    if(use_dm1);  wavefront = prop_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling, 'ytilt', 9.65);  end
+    if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM1_phase_error.fits'], 'WAVEFRONT');  end
+    
+    wavefront = prop_propagate(wavefront, d_dm1_dm2, 'SURFACE_NAME', 'DM2');
+    if(use_dm2);  wavefront = prop_dm(wavefront, dm2, dm_xc, dm_yc, dm_sampling);  end
+    if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_DM2_phase_error.fits'], 'WAVEFRONT');  end
+
+end
 
 wavefront = prop_propagate(wavefront, d_dm2_qwp, 'SURFACE_NAME', 'QWP');	%-- quarter-wave plate
 if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_QWP1_phase_error.fits'], 'WAVEFRONT');  end
@@ -203,23 +311,95 @@ wavefront = prop_lens(wavefront, fl_m6);
 wavefront = prop_propagate(wavefront, d_m6_fpm);
 
 if(use_pr == false)
-    % if(use_fpm);  [wavefront, fpm] = prop_8th_order_mask(wavefront, 4.0, 'CIRCULAR');  end %--Band-limited mask
     if(use_fpm)
 
-        apRad = pupil_diam_pix/2.;
-        useGPU = false;
-        inVal = 0.3;    %-- found empirically
-        outVal = 5;     %-- found empirically
+        if is_vc
+            apRad = pupil_diam_pix/2.;
+            useGPU = false;
+            inVal = 0.3;    %-- found empirically
+            outVal = 5;     %-- found empirically
 
-        % 1) IFFT to previous pupil
-        % 2) Use propcustom_mft_Pup2Vortex2Pup() to go to Lyot plane
-        % 3) IFFT to FPM's focal plane  
-        EpupPre = ifftshift(ifft2(wavefront.wf))*gridsize; % wavefront.wf is already fftshifted
-        EpupPost = propcustom_mft_Pup2Vortex2Pup(EpupPre, vortexCharge, apRad, inVal, outVal, useGPU);
-        wavefront.wf = ifft2(fftshift(EpupPost))*gridsize;
+            % 1) IFFT to previous pupil
+            % 2) Use propcustom_mft_Pup2Vortex2Pup() to go to Lyot plane
+            % 3) IFFT to FPM's focal plane  
+            EpupPre = ifftshift(ifft2(wavefront.wf))*gridsize; % wavefront.wf is already fftshifted
+            EpupPost = propcustom_mft_Pup2Vortex2Pup(EpupPre, vortexCharge, apRad, inVal, outVal, useGPU);
+            wavefront.wf = ifft2(fftshift(EpupPost))*gridsize;
+            
+        elseif is_hlc
+            fprintf('  %s\n  %s\n\n', occulter_file_r, occulter_file_i)
+%             occ = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
+
+            occulterUpsampleFactor = 4;
+            
+            occ0 = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
+            if angle(occ0(1,1)) ~= 0
+                occ0 = occ0.*exp(-1j*angle(occ0(1,1))); %--Standardize the phase of the masks to be 0 for the outer glass part.
+            end
+            occ0 = propcustom_relay(occ0, 1);
+            
+            if occulterUpsampleFactor > 1
+                
+                wf0 = ifftshift(wavefront.wf);
+                % back propagate to previous pupil (IFFT)
+                EpupPre = ifftshift(ifft2(wavefront.wf))*gridsize; % wavefront.wf is already fftshifted
+                % zero-pad
+                EpupPrePad = pad_crop(EpupPre, gridsize*occulterUpsampleFactor);
+                % forward propagate (FFT)
+                EfocHighRes = ifftshift(fft2(fftshift(EpupPrePad)))/(gridsize*occulterUpsampleFactor);
+                % Apply higher-res occulter
+                EfocHighRes = EfocHighRes.*pad_crop(occ0, (gridsize*occulterUpsampleFactor));
+                % back propagate to previous pupil (IFFT)
+                EpupPrePad2 = ifftshift(ifft2(fftshift(EfocHighRes)))*(gridsize*occulterUpsampleFactor);
+                % crop back down to original size
+                EpupPre2 = pad_crop(EpupPrePad2, gridsize);
+                % forward propagate (FFT) back to focal plane
+                Efoc = fft2(fftshift(EpupPre2))/gridsize;
+                % put E-field back into PROPER's wavefront structure
+                wavefront.wf = Efoc;
+                
+%                 figure(401); imagesc(log10(abs(wf0))); axis xy equal tight; colorbar;
+%                 figure(402); imagesc(log10(abs(EfocHighRes))); axis xy equal tight; colorbar;
+%                 figure(410); imagesc(log10(abs(fftshift(Efoc)))); axis xy equal tight; colorbar;
+% %                 figure(411); imagesc(abs(wf0)-(abs(fftshift(Efoc)))); axis xy equal tight; colorbar;
+
+                
+            else
+                wavefront = prop_multiply(wavefront, pad_crop(occ0, n_default, 'extrapval', occ(1, 1)));
+                clear occ
+            end
+
+%             % Fourier Downsample by Factor of 2
+%             occ0 = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
+%             occ0 = pad_crop(occ0, 4096);
+%             nocc = size(occ0, 1);
+%             focc = fft2(ifftshift(occ0));
+%             focc = fftshift(focc);
+%             focc = pad_crop(focc, nocc/2);
+%             focc = fftshift(focc);
+%             occ = fftshift(ifft2(focc))/dsfac^2;
+%             occ = pad_crop(occ, nocc);
+%     %         occ = pad_crop(occ, nocc, 'extrapval', occ0(1,1));
+%             figure(41); imagesc(abs(occ0)); axis xy equal tight; colorbar;
+%             figure(42); imagesc(abs(occ)); axis xy equal tight; colorbar;
+%             
+%             
+%             %--DEBUGGING
+%             if angle(occ(1,1)) ~= 0
+%                 occ = occ.*exp(-1j*angle(occ(1,1))); %--Standardize the phase of the masks to be 0 for the outer glass part.
+%             end
+%             
+%             wavefront = prop_multiply(wavefront, pad_crop(occ, gridsize, 'extrapval', occ(1, 1)));
+%             clear occ
+            
+        elseif is_blc
+            [wavefront, fpm] = prop_8th_order_mask(wavefront, 4.0, 'CIRCULAR');
+            
+        else
+            error('Value of cor_type not recognized.')
+        end
 
     end
-
 
     wavefront = prop_propagate(wavefront, d_fpm_m7, 'SURFACE_NAME', 'M7');
     if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_M7_phase_error.fits'], 'WAVEFRONT');  end
@@ -228,7 +408,16 @@ if(use_pr == false)
     wavefront = prop_propagate(wavefront, d_m7_lyotstop, 'SURFACE_NAME', 'Lyot stop');
     
     if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_QWP2_phase_error.fits'], 'WAVEFRONT');  end
-    if(use_lyot_stop); wavefront = prop_circular_aperture(wavefront, normLyotDiam, 'NORM');  end
+    if(use_lyot_stop)
+        if is_vc || is_blc
+            wavefront = prop_circular_aperture(wavefront, normLyotDiam, 'NORM');
+        elseif is_hlc
+           lyot = pad_crop(fitsread(lyot_stop_fn), gridsize);
+           wavefront = prop_multiply(wavefront, lyot);
+        else
+            error('Coronagraph type not recognized.')
+        end
+    end
 
     wavefront = prop_propagate(wavefront, d_lyotstop_m8, 'SURFACE_NAME', 'M8');
     if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_M8_phase_error.fits'], 'WAVEFRONT');  end
@@ -242,9 +431,9 @@ if(use_pr == false)
     end
 
 
-    Efs = ifftshift((wavefront.wf)); % wavefront.wf is already fftshifted
-    fitswrite(abs(Efs),'/Users/ajriggs/Downloads/Efs_abs_init_matlab.fits');
-    fitswrite(angle(Efs),'/Users/ajriggs/Downloads/Efs_angle_init_matlab.fits');      
+%     Efs = ifftshift((wavefront.wf)); % wavefront.wf is already fftshifted
+%     fitswrite(abs(Efs),'/Users/ajriggs/Downloads/Efs_abs_init_matlab.fits');
+%     fitswrite(angle(Efs),'/Users/ajriggs/Downloads/Efs_angle_init_matlab.fits');      
     
     wavefront = prop_propagate(wavefront, d_fieldstop_m9, 'SURFACE_NAME', 'M9');
     if(use_errors); wavefront = prop_errormap(wavefront, [map_dir 'habex_cycle1_M9_phase_error.fits'], 'WAVEFRONT');  end
@@ -263,12 +452,15 @@ if(use_pr == false)
 
     %-- rescale to "final_sampling_lam0" lam0/D per pixel
     mag = (pupil_ratio / final_sampling_lam0) * (lambda_m / lambda0_m);
+    if is_hlc
+        mag = mag * hlc_factor;
+    end
     wavefront = prop_magnify(wavefront, mag, 'SIZE_OUT', nout, 'AMP_CONSERVE');
     
 else % Get E-field at pupil preceding the FPM
         EpupBeforeFPM = ifftshift(ifft2(wavefront.wf))*gridsize; % IFFT to previous pupil
         
-        mag = pr_pupil_diam_pix/pupil_diam_pix;
+        mag = pr_pupil_diam_pix / pupil_diam_pix;
         wavefront = prop_magnify(EpupBeforeFPM, mag, 'SIZE_OUT', 2*ceil(0.5*mag*gridsize), 'AMP_CONSERVE');
         sampling_m = 0; %-- dummy value
 end

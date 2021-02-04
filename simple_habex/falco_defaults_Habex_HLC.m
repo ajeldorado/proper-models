@@ -27,18 +27,18 @@ mp.planetFlag = false;
 % - 'EE' for encircled energy within a radius (mp.thput_radius) divided by energy at telescope pupil
 mp.thput_metric = 'EE'; 
 mp.thput_radius = 0.7; %--photometric aperture radius [lambda_c/D]. Used ONLY for 'EE' method.
-mp.thput_eval_x = 7; % x location [lambda_c/D] in dark hole at which to evaluate throughput
+mp.thput_eval_x = 10; % x location [lambda_c/D] in dark hole at which to evaluate throughput
 mp.thput_eval_y = 0; % y location [lambda_c/D] in dark hole at which to evaluate throughput
 
 %--Where to shift the source to compute the intensity normalization value.
-mp.source_x_offset_norm = 7;  % x location [lambda_c/D] in dark hole at which to compute intensity normalization
+mp.source_x_offset_norm = 10;  % x location [lambda_c/D] in dark hole at which to compute intensity normalization
 mp.source_y_offset_norm = 0;  % y location [lambda_c/D] in dark hole at which to compute intensity normalization
 
 %% Bandwidth and Wavelength Specs
 
-mp.lambda0 = 550e-9;    %--Central wavelength of the whole spectral bandpass [meters]
+mp.lambda0 = 575e-9;    %--Central wavelength of the whole spectral bandpass [meters]
 mp.fracBW = 0.10;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
-mp.Nsbp = 5;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
+mp.Nsbp = 9;            %--Number of sub-bandpasses to divide the whole bandpass into for estimation and control
 mp.Nwpsbp = 1;          %--Number of wavelengths to used to approximate an image in each sub-bandpass
 
 %% Wavefront Estimation
@@ -127,6 +127,7 @@ mp.dm2.inf_fn = 'influence_dm5v2.fits';
 
 mp.dm1.dm_spacing = 400e-6; %--User defined actuator pitch [meters]
 mp.dm2.dm_spacing = 400e-6; %--User defined actuator pitch [meters]
+pitchRatio = 0.4/0.9906;
 
 mp.dm1.inf_sign = '+';
 mp.dm2.inf_sign = '+';
@@ -137,7 +138,7 @@ mp.dm2.inf_sign = '+';
 mp.dm1.Nact = 64;               % # of actuators across DM array
 mp.dm1.VtoH = 1e-9*ones(mp.dm1.Nact);  % gains of all actuators [nm/V of free stroke]
 mp.dm1.xtilt = 0;               % for foreshortening. angle of rotation about x-axis [degrees]
-mp.dm1.ytilt = 0;               % for foreshortening. angle of rotation about y-axis [degrees]
+mp.dm1.ytilt = 9.65;               % for foreshortening. angle of rotation about y-axis [degrees]
 mp.dm1.zrot = 0;                % clocking of DM surface [degrees]
 mp.dm1.xc = (mp.dm1.Nact/2 - 1/2);       % x-center location of DM surface [actuator widths]
 mp.dm1.yc = (mp.dm1.Nact/2 - 1/2);       % y-center location of DM surface [actuator widths]
@@ -147,7 +148,7 @@ mp.dm1.edgeBuffer = 1;          % max radius (in actuator spacings) outside of b
 mp.dm2.Nact = 64;               % # of actuators across DM array
 mp.dm2.VtoH = 1e-9*ones(mp.dm1.Nact);  % gains of all actuators [nm/V of free stroke]
 mp.dm2.xtilt = 0;               % for foreshortening. angle of rotation about x-axis [degrees]
-mp.dm2.ytilt = 0;               % for foreshortening. angle of rotation about y-axis [degrees]
+mp.dm2.ytilt = 9.65;               % for foreshortening. angle of rotation about y-axis [degrees]
 mp.dm2.zrot = 0;                % clocking of DM surface [degrees]
 mp.dm2.xc = (mp.dm2.Nact/2 - 1/2);       % x-center location of DM surface [actuator widths]
 mp.dm2.yc = (mp.dm2.Nact/2 - 1/2);       % y-center location of DM surface [actuator widths]
@@ -161,25 +162,25 @@ mp.dm2.Dstop = mp.dm2.Nact*mp.dm1.dm_spacing;   %--Diameter of iris [meters]
 
 %--DM separations
 mp.d_P2_dm1 = 0;        % distance (along +z axis) from P2 pupil to DM1 [meters]
-mp.d_dm1_dm2 = 0.32;   % distance between DM1 and DM2 [meters]
-
+% mp.d_dm1_dm2 = 0.32;   % distance between DM1 and DM2 [meters]
+mp.d_dm1_dm2 = 1.0 * (pitchRatio*pitchRatio);  % distance between DM1 and DM2 [meters]
 
 %% Optical Layout: All models
 
 %--Key Optical Layout Choices
 mp.flagSim = true;      %--Simulation or not
 mp.layout = 'proper';  %--Which optical layout to use
-mp.coro = 'vortex';
+mp.coro = 'hlc';
 mp.flagApod = false;    %--Whether to use an apodizer or not
 mp.flagDMwfe = false;  %--Whether to use BMC DM quilting maps
 
 %--Final Focal Plane Properties
 mp.Fend.res = 3; %--Sampling [ pixels per lambda0/D]
-mp.Fend.FOV = 30; %--half-width of the field of view in both dimensions [lambda0/D]
+mp.Fend.FOV = 14; %--half-width of the field of view in both dimensions [lambda0/D]
 
 %--Correction and scoring region definition
-mp.Fend.corr.Rin  = 2.0;   % inner radius of dark hole correction region [lambda0/D]
-mp.Fend.corr.Rout = 26;  % outer radius of dark hole correction region [lambda0/D]
+mp.Fend.corr.Rin  = 2.8;   % inner radius of dark hole correction region [lambda0/D]
+mp.Fend.corr.Rout = 12;  % outer radius of dark hole correction region [lambda0/D]
 mp.Fend.corr.ang  = 180;  % angular opening of dark hole correction region [degrees]
 
 mp.Fend.score.Rin  = mp.Fend.corr.Rin;  % inner radius of dark hole scoring region [lambda0/D]
@@ -195,12 +196,12 @@ mp.Fend.sides = 'lr'; %--Which side(s) for correction: 'left', 'right', 'top', '
 mp.fl = 1; %--[meters] Focal length value used for all FTs in the compact model. Don't need different values since this is a Fourier model.
 
 %--Pupil Plane Diameters
-mp.P2.D = 60.8985*mp.dm1.dm_spacing;
+mp.P2.D = 1.00215*64e-3 * pitchRatio; % meters
 mp.P3.D = mp.P2.D;
 mp.P4.D = mp.P2.D;
 
 %--Pupil Plane Resolutions
-mp.P1.compact.Nbeam = 62*4; %62*7;
+mp.P1.compact.Nbeam = 314.581; %62*4; %62*7;
 mp.P2.compact.Nbeam = mp.P1.compact.Nbeam;
 mp.P3.compact.Nbeam = mp.P1.compact.Nbeam;
 mp.P4.compact.Nbeam = mp.P1.compact.Nbeam;  % P4 must be the same as P1 for Vortex. 
@@ -212,32 +213,61 @@ mp.P4.compact.Nbeam = mp.P1.compact.Nbeam;  % P4 must be the same as P1 for Vort
 mp.Nrelay1to2 = 1;
 mp.Nrelay2to3 = 1;
 mp.Nrelay3to4 = 1;
-mp.NrelayFend = 0; %--How many times to rotate the final image by 180 degrees
+mp.NrelayFend = 0;%1; %0; %--How many times to rotate the final image by 180 degrees
 
 %% Optical Layout: Full Model 
 
 mp.full.flagPROPER = true; %--Whether the full model is a PROPER prescription
-mp.full.prescription = 'habex';
-% mp.full.cor_type = 'vortex'; 
-mp.full.map_dir = '/Users/ajriggs/Documents/habex/maps/';	%-- directory containing optical surface error maps
+mp.full.prescription = 'habex_multi_coro';
 mp.full.gridsize = 1024; % # of points across in PROPER model 
+
+% Values passed into the Habex PROPER model
+mp.full.cor_type = 'hlc'; mp.full.mask_dir = '/Users/ajriggs/Documents/habex/run819/';	%-- directory containing Habex HLC files
+
+mp.full.map_dir = '/Users/ajriggs/Documents/habex/maps/';	%-- directory containing optical surface error maps
+mp.full.pupil_fn = 'run819_roman_pupil_rotated.fits';
+mp.full.lyot_stop_fn = 'run819_roman_lyot_rotated.fits';
+% mp.full.pupil_fn = 'run819_luvoir_pupil_aj.fits';
+% mp.full.lyot_stop_fn = 'run819_luvoir_lyot_aj.fits';
+mp.full.nlams = mp.Nsbp;
+mp.full.bw = mp.fracBW;
+mp.full.fpm_aoi = '5.5'; % string, AOI in degrees.
+mp.full.fpm_pol = 's';
+
+
 
 %--Focal planes
 mp.full.nout = ceil_even(1 + mp.Fend.res*(2*mp.Fend.FOV)); %  dimensions of output in pixels (overrides output_dim0)
 mp.full.final_sampling_lam0 = 1/mp.Fend.res;	%   final sampling in lambda0/D
-mp.full.use_field_stop = true;	%-- use field stop (0 = no stop)
+mp.full.use_field_stop = false;%true;	%-- use field stop (0 = no stop)
 mp.full.field_stop_radius = mp.Fend.corr.Rout;   %-- field stop radius in lam0/D
 
 % %--Pupil Plane Resolutions
-mp.P1.full.Nbeam = 62*7;
+mp.P1.full.Nbeam = 314.581; %62*7;
 mp.P1.full.Narr = 2^nextpow2(mp.P1.full.Nbeam);
 mp.full.lambda0_um = mp.lambda0*1e6;	%-- default reference wavelength (center of bandpass) for star offsets & field stop size
 mp.full.pupil_diam_pix = mp.P1.full.Nbeam;
 % mp.full.grid_size = mp.P1.full.Narr;
 
-mp.full.use_errors = true;
-mp.full.dm1.flatmap = fitsread([mp.full.map_dir, 'flat_map.fits']);
-mp.full.dm2.flatmap = 0;
+% mp.full.use_errors = true;
+% mp.full.dm1.flatmap = fitsread([mp.full.map_dir, 'flat_map.fits']);
+% mp.full.dm2.flatmap = 0;
+
+mp.full.use_errors = false;
+mp.full.dm1.flatmap = 0;%fitsread([mp.full.mask_dir, 'run819_roman_dm1acts.fits']);
+mp.full.dm2.flatmap = 0;%fitsread([mp.full.mask_dir, 'run819_roman_dm2acts.fits']);
+
+mp.full.use_hlc_dm_patterns = true;
+% mp.flagDMwfe = true;
+mp.full.dm1wfe_fn = 'run819_roman_dm1wfe.fits';
+mp.full.dm2wfe_fn = 'run819_roman_dm2wfe.fits';
+
+
+mp.dm1.wfe = fitsread([mp.full.mask_dir, mp.full.dm1wfe_fn]);
+mp.dm2.wfe = fitsread([mp.full.mask_dir, mp.full.dm2wfe_fn]);
+% mp.dm1.wfe = propcustom_relay(mp.dm1.wfe, 1);
+% mp.dm2.wfe = propcustom_relay(mp.dm2.wfe, 1);
+
 
 % mp.full.zindex = 4;
 % mp.full.zval_m = 0.19e-9;
@@ -263,35 +293,29 @@ mp.full.dm2.flatmap = 0;
 %% Mask Definitions
 
 %--Pupil definition
-mp.whichPupil = 'simple';
-mp.P1.IDnorm = 0.00; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
-mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
-mp.P1.D = 4.0; %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
-mp.P1.Nstrut = 0;
-mp.P1.angStrut = [];
-mp.P1.wStrut = 0;
-mp.P1.stretch = 1;
+mp.whichPupil = 'LUVOIRAFINAL';
+mp.P1.IDnorm = 0.10; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
+% mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
+mp.P1.D = 15.0; %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
+
 
 %--Lyot stop padding
-mp.P4.IDnorm = 0; %--Lyot stop ID [Dtelescope]
-mp.P4.ODnorm = 0.95; %--Lyot stop OD [Dtelescope]
-mp.P4.padFacPct = 0;
-mp.P4.Nstrut = 0;
-mp.P4.angStrut = [];
-mp.P4.wStrut = 0;
-mp.P4.stretch = 1;
+mp.P4.IDnorm = 0.2327; %--Lyot stop ID [Dtelescope]
+mp.P4.ODnorm = 0.7446312; %--Lyot stop OD [Dtelescope]
+mp.P4.wStrut = 0.00933782;
+
+mp.compact.flagGenPupil = false;
+mp.compact.flagGenLS = false;
+mp.P1.compact.mask = fitsread([mp.full.mask_dir, 'run819_roman_pupil.fits']);
+mp.P4.compact.mask = fitsread([mp.full.mask_dir, 'run819_roman_lyot.fits']);
+% mp.P1.compact.mask = fitsread([mp.full.mask_dir, 'run819_roman_pupil_rotated.fits']);
+% mp.P4.compact.mask = fitsread([mp.full.mask_dir, 'run819_roman_lyot_rotated.fits']);
 
 %--Whether to generate or load various masks: compact model
 % mp.dm1.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm1wfe.fits']);
 % mp.dm2.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm2wfe.fits']);
 
-%% VC-Specific Values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-mp.F3.VortexCharge = 6; %--Charge of the vortex mask
-
-%%
-%-- Values for PROPER
-mp.full.normLyotDiam = mp.P4.ODnorm;
-mp.full.vortexCharge = mp.F3.VortexCharge;
+% mp.P1.full.mask = fitsread(mp.full.mask_dir
 
 
