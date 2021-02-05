@@ -176,4 +176,8 @@ mp.runLabel = ['Series',num2str(mp.SeriesNum,'%04d'),'_Trial',num2str(mp.TrialNu
 
 [mp, out] = falco_flesh_out_workspace(mp);
 
+% Set compact model's entrance aperture as ones because it is already
+% implicit in mp.P1.compact.E and shouldn't be double-counted.
+mp.P1.compact.mask = ones(size(mp.P1.compact.mask));
+
 [mp, out] = falco_wfsc_loop(mp, out);
