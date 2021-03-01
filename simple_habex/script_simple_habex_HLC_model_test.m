@@ -8,19 +8,19 @@
 % Written by A.J. Riggs (JPL, CIT) in February, 2020
 % 
 % Matlab's PATH must know the locations of 
-% - the Habex prescription 'habex_vortex'
+% - the Habex prescription 'habex_multi_coro'
 % - the PROPER library
 % - the FALCO package
 
-clear all
+clear
 
 prescription = 'habex_multi_coro';
 
 optval.cor_type = 'hlc';
 
-lambda0 = 575e-9;%550e-9;    %--Central wavelength of the whole spectral bandpass [meters]
+lambda0 = 575e-9;    %--Central wavelength of the whole spectral bandpass [meters]
 lambda_um = lambda0 * 1e6;
-optval.lambda0_um = 0.575;%0.550;
+optval.lambda0_um = lambda0 * 1e6;
 
 %--Focal planes
 res = 3;
@@ -65,7 +65,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 0;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 0;	%-- use field stop (0 = no stop)
-% [Epup, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [Epup, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [Epup, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 
 mask = 0*Epup;
@@ -81,7 +81,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 0;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 0;	%-- use field stop (0 = no stop)
-% [EforNorm, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [EforNorm, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [EforNorm, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 
 IforNorm = abs(EforNorm).^2;
@@ -93,7 +93,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 1;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 1;	%-- use field stop (0 = no stop)
-% [Ecoro, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [Ecoro, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [Ecoro, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 Inorm = abs(Ecoro).^2 / I00;
 figure(4); imagesc(log10(Inorm), c_range); axis xy equal tight; colorbar;
@@ -112,7 +112,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 0;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 0;	%-- use field stop (0 = no stop)
-% [Epup, sampling_m]  = habex_vortex(lambda_um, gridsize, optval);
+% [Epup, sampling_m]  = habex_multi_coro(lambda_um, gridsize, optval);
 [Epup, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 
 mask = 0*Epup;
@@ -128,7 +128,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 0;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 0;	%-- use field stop (0 = no stop)
-% [EforNorm, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [EforNorm, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [EforNorm, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 IforNorm = abs(EforNorm).^2;
 I00 = max(IforNorm(:));
@@ -139,7 +139,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 1;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 1;	%-- use field stop (0 = no stop)
-% [Ecoro, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [Ecoro, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [Ecoro, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 Inorm = abs(Ecoro).^2 / I00;
 figure(14); imagesc(log10(Inorm), c_range); axis xy equal tight; colorbar;
@@ -154,7 +154,7 @@ optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 optval.use_fpm = 1;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 1;	%-- use field stop (0 = no stop)
-% [Ecoro, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [Ecoro, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [Ecoro, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 Inorm = abs(Ecoro).^2 / I00;
 figure(15); imagesc(log10(Inorm), c_range); axis xy equal tight; colorbar;
@@ -172,7 +172,7 @@ optval.dm2wfe_fn = 'run819_roman_dm2wfe.fits';
 optval.use_fpm = 1;		%-- use focal plane mask (0 = no FPM)
 optval.use_lyot_stop = 1;	%-- use Lyot stop (0 = no stop)
 optval.use_field_stop = 1;	%-- use field stop (0 = no stop)
-% [Ecoro, sampling_m]  = habex_vortex(lambda_m, gridsize, optval);
+% [Ecoro, sampling_m]  = habex_multi_coro(lambda_m, gridsize, optval);
 [Ecoro, sampling_m] = prop_run(prescription, lambda_um, gridsize, 'quiet', 'passvalue', optval);
 Inorm = abs(Ecoro).^2 / I00;
 figure(16); imagesc(log10(Inorm), c_range); axis xy equal tight; colorbar;

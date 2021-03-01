@@ -4,16 +4,16 @@
 % at the California Institute of Technology.
 % -------------------------------------------------------------------------
 %
-% Script to perform WFSC for the Habex vortex model.
+% Script to perform WFSC for the Habex HLC model.
 %
 % Written by A.J. Riggs (JPL, CIT) in February 2020.
 %
 % Matlab's path must know the locations of 
-% - the Habex prescription 'habex.m'
+% - the Habex prescription 'habex_multi_coro.m'
 % - the PROPER library
 % - the FALCO package
 %
-% In falco_defaults_Habex_VC.m, change the value of mp.full.map_dir to be
+% In falco_defaults_Habex_HLC.m, change the value of mp.full.map_dir to be
 % for your computer.
 % -------------------------------------------------------------------------
 
@@ -271,8 +271,9 @@ mp.dm1.dx = mp.P2.D/mp.P2.compact.Nbeam;
 mp.dm1.centering = 'pixel';
 V0 = falco_fit_dm_surf(mp.dm1,surfaceToFit);
 
-fitswrite(V0, [mp.full.map_dir, 'flat_map_hlc.fits'])
 figure(3); imagesc(V0); axis xy equal tight; colorbar; 
+
+% fitswrite(V0, [mp.full.map_dir, 'flat_map_hlc.fits'])
 
 return
 

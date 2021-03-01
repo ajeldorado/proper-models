@@ -9,7 +9,7 @@
 % Written by A.J. Riggs (JPL, CIT) in February 2020.
 %
 % Matlab's path must know the locations of 
-% - the Habex prescription 'habex.m'
+% - the Habex prescription, 'habex.m' or 'habex_multi_coro.m'
 % - the PROPER library
 % - the FALCO package
 %
@@ -17,7 +17,7 @@
 % for your computer.
 % -------------------------------------------------------------------------
 
-clear all;
+clear
 
 %% Step 1: Define Necessary Paths on Your Computer System
 
@@ -132,11 +132,14 @@ end
 % optval.use_pr = true;
 % optval.pr_pupil_diam_pix = mp.P1.compact.Nbeam;
 % 
+% optval.use_dm1 = false;
+% optval.use_dm2 = false;
+% 
 % optval.use_errors = 1;		%-- 1 = use optical surface errors, 0 = none
 % % optval.use_fpm = 0;		%-- use focal plane mask (0 = no FPM)
 % % optval.use_lyot_stop = 0;	%-- use Lyot stop (0 = no stop)
 % % optval.use_field_stop = 0;	%-- use field stop (0 = no stop)
-% [Epup, sampling_m]  = habex_vortex(mp.lambda0, mp.P1.full.Narr, optval);
+% [Epup, sampling_m]  = habex_multi_coro(mp.lambda0, mp.P1.full.Narr, optval);
 % 
 % mask = 0*Epup;
 % mask(abs(Epup) > 1e-1*max(abs(Epup(:)))) = 1;
@@ -156,8 +159,9 @@ end
 % mp.dm1.dx = mp.P2.D/mp.P2.compact.Nbeam;
 % mp.dm1.centering = 'pixel';
 % V0 = falco_fit_dm_surf(mp.dm1,surfaceToFit);
+% figure(3); imagesc(V0); axis xy equal tight; colorbar; drawnow;
+% 
 % fitswrite(V0, [mp.full.map_dir, 'flat_map.fits'])
-% figure(3); imagesc(V0); axis xy equal tight; colorbar; 
 % 
 % return
 
