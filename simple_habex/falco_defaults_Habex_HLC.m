@@ -19,9 +19,6 @@ mp.flagPlot = false;
 %--General
 mp.centering = 'pixel';
 
-%--Whether to include planet in the images
-mp.planetFlag = false;
-
 %--Method of computing core throughput:
 % - 'HMI' for energy within half-max isophote divided by energy at telescope pupil
 % - 'EE' for encircled energy within a radius (mp.thput_radius) divided by energy at telescope pupil
@@ -45,29 +42,21 @@ mp.Nwpsbp = 1;          %--Number of wavelengths to used to approximate an image
 
 %--Estimator Options:
 % - 'perfect' for exact numerical answer from full model
-% - 'pwp-bp' for pairwise probing with batch process estimation
+% - 'pwp-bp-square' for pairwise probing with batch process estimation in a
+% square region for one star [original functionality of 'pwp-bp' prior to January 2021]
+% - 'pwp-bp' for pairwise probing in the specified rectangular regions for
+%    one or more stars
 % - 'pwp-kf' for pairwise probing with Kalman filter [NOT TESTED YET]
-% - 'pwp-iekf' for pairwise probing with iterated extended Kalman filter  [NOT AVAILABLE YET]
 mp.estimator = 'perfect';
 
-%--New variables for pairwise probing estimation:
+%--For pairwise probing estimation with mp.estimator='pwp-bp-square'
 mp.est.probe.Npairs = 3;     % Number of pair-wise probe PAIRS to use.
 mp.est.probe.whichDM = 1;    % Which DM # to use for probing. 1 or 2. Default is 1
-mp.est.probe.radius = 12;    % Max x/y extent of probed region [actuators].
-mp.est.probe.offsetX = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
-mp.est.probe.offsetY = 10;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
+mp.est.probe.radius = 12;    % Max x/y extent of probed region [lambda/D].
+mp.est.probe.xOffset = 0;   % offset of probe center in x [actuators]. Use to avoid central obscurations.
+mp.est.probe.yOffset = 10;    % offset of probe center in y [actuators]. Use to avoid central obscurations.
 mp.est.probe.axis = 'alternate';     % which axis to have the phase discontinuity along [x or y or xy/alt/alternate]
 mp.est.probe.gainFudge = 1;     % empirical fudge factor to make average probe amplitude match desired value.
-
-%--New variables for pairwise probing with a Kalman filter
-% mp.est.ItrStartKF = 2 %Which correction iteration to start recursive estimate
-% mp.est.tExp =
-% mp.est.num_im =
-% mp.readNoiseStd =
-% mp.peakCountsPerPixPerSec =
-% mp.est.Qcoef =
-% mp.est.Rcoef =
-% mp.est.Pcoef0 = 
 
 %% Wavefront Control: General
 
@@ -88,7 +77,6 @@ mp.eval.Rsens = [2,3; 3,4; 4,5];
 %--Grid- or Line-Search Settings
 mp.ctrl.log10regVec = -6:1/2:-2; %--log10 of the regularization exponents (often called Beta values)
 mp.ctrl.dmfacVec = 1;            %--Proportional gain term applied to the total DM delta command. Usually in range [0.5,1].
-% % mp.ctrl.dm9regfacVec = 1;        %--Additional regularization factor applied to DM9
    
 %--Spatial pixel weighting
 mp.WspatialDef = [];% [3, 4.5, 3]; %--spatial control Jacobian weighting by annulus: [Inner radius, outer radius, intensity weight; (as many rows as desired)]
@@ -107,7 +95,6 @@ mp.maxAbsdV = 1000;     %--Max +/- delta voltage step for each actuator for DMs 
 % Controller options: 
 %  - 'gridsearchEFC' for EFC as an empirical grid search over tuning parameters
 %  - 'plannedEFC' for EFC with an automated regularization schedule
-%  - 'SM-CVX' for constrained EFC using CVX. --> DEVELOPMENT ONLY
 mp.controller = 'gridsearchEFC';
 
 % % % GRID SEARCH EFC DEFAULTS     
@@ -127,7 +114,7 @@ mp.dm2.inf_fn = 'influence_dm5v2.fits';
 
 mp.dm1.dm_spacing = 400e-6; %--User defined actuator pitch [meters]
 mp.dm2.dm_spacing = 400e-6; %--User defined actuator pitch [meters]
-pitchRatio = 0.4/0.9906;
+pitchRatio = 0.4/0.9906; % BMC 2k DM pitch over Xinetics DM pitch
 
 mp.dm1.inf_sign = '+';
 mp.dm2.inf_sign = '+';
@@ -201,7 +188,7 @@ mp.P3.D = mp.P2.D;
 mp.P4.D = mp.P2.D;
 
 %--Pupil Plane Resolutions
-mp.P1.compact.Nbeam = 314.581; %62*4; %62*7;
+mp.P1.compact.Nbeam = 314.581; 
 mp.P2.compact.Nbeam = mp.P1.compact.Nbeam;
 mp.P3.compact.Nbeam = mp.P1.compact.Nbeam;
 mp.P4.compact.Nbeam = mp.P1.compact.Nbeam;  % P4 must be the same as P1 for Vortex. 
@@ -234,8 +221,6 @@ mp.full.bw = mp.fracBW;
 mp.full.fpm_aoi = '5.5'; % string, AOI in degrees.
 mp.full.fpm_pol = 's';
 
-
-
 %--Focal planes
 mp.full.nout = ceil_even(1 + mp.Fend.res*(2*mp.Fend.FOV)); %  dimensions of output in pixels (overrides output_dim0)
 mp.full.final_sampling_lam0 = 1/mp.Fend.res;	%   final sampling in lambda0/D
@@ -258,7 +243,6 @@ mp.full.dm1.flatmap = 0;%fitsread([mp.full.mask_dir, 'run819_roman_dm1acts.fits'
 mp.full.dm2.flatmap = 0;%fitsread([mp.full.mask_dir, 'run819_roman_dm2acts.fits']);
 
 mp.full.use_hlc_dm_patterns = true;
-% mp.flagDMwfe = true;
 mp.full.dm1wfe_fn = 'run819_roman_dm1wfe.fits';
 mp.full.dm2wfe_fn = 'run819_roman_dm2wfe.fits';
 
@@ -269,27 +253,6 @@ mp.dm2.wfe = fitsread([mp.full.mask_dir, mp.full.dm2wfe_fn]);
 % mp.dm2.wfe = propcustom_relay(mp.dm2.wfe, 1);
 
 
-% mp.full.zindex = 4;
-% mp.full.zval_m = 0.19e-9;
-% mp.full.use_hlc_dm_patterns = false; % whether to use design WFE maps for HLC.
-% mp.full.lambda0_m = mp.lambda0;
-% mp.full.input_field_rootname = '';	%   rootname of files containing aberrated pupil
-% mp.full.use_dm1 = 0;                %   use DM1? 1 or 0
-% mp.full.use_dm2 = 0;                %   use DM2? 1 or 0
-% mp.full.dm_sampling_m = 0.9906e-3;     %   actuator spacing in meters; default is 1 mm
-% mp.full.dm1_xc_act = 23.5;          %   for 48x48 DM, wavefront centered at actuator intersections: (0,0) = 1st actuator center
-% mp.full.dm1_yc_act = 23.5;
-% mp.full.dm1_xtilt_deg = 0;   		%   tilt around X axis
-% mp.full.dm1_ytilt_deg = 5.7;		%   effective DM tilt in deg including 9.65 deg actual tilt and pupil ellipticity
-% mp.full.dm1_ztilt_deg = 0;
-% mp.full.dm2_xc_act = 23.5;		
-% mp.full.dm2_yc_act = 23.5;
-% mp.full.dm2_xtilt_deg = 0;   
-% mp.full.dm2_ytilt_deg = 5.7;
-% mp.full.dm2_ztilt_deg = 0;
-% mp.full.use_fpm  = 1;
-
-
 %% Mask Definitions
 
 %--Pupil definition
@@ -297,7 +260,6 @@ mp.whichPupil = 'LUVOIRAFINAL';
 mp.P1.IDnorm = 0.10; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
 % mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
 mp.P1.D = 15.0; %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
-
 
 %--Lyot stop padding
 mp.P4.IDnorm = 0.2327; %--Lyot stop ID [Dtelescope]
@@ -314,8 +276,3 @@ mp.P4.compact.mask = fitsread([mp.full.mask_dir, 'run819_roman_lyot.fits']);
 %--Whether to generate or load various masks: compact model
 % mp.dm1.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm1wfe.fits']);
 % mp.dm2.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm2wfe.fits']);
-
-
-% mp.P1.full.mask = fitsread(mp.full.mask_dir
-
-
