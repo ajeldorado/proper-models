@@ -327,9 +327,8 @@ if(use_pr == false)
             wavefront.wf = ifft2(fftshift(EpupPost))*gridsize;
             
         elseif is_hlc
-            fprintf('  %s\n  %s\n\n', occulter_file_r, occulter_file_i)
+%             fprintf('  %s\n  %s\n\n', occulter_file_r, occulter_file_i)
 %             occ = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
-
             occulterUpsampleFactor = 4;
             
             occ0 = complex(fitsread(occulter_file_r),fitsread(occulter_file_i));
@@ -362,7 +361,6 @@ if(use_pr == false)
 %                 figure(402); imagesc(log10(abs(EfocHighRes))); axis xy equal tight; colorbar;
 %                 figure(410); imagesc(log10(abs(fftshift(Efoc)))); axis xy equal tight; colorbar;
 % %                 figure(411); imagesc(abs(wf0)-(abs(fftshift(Efoc)))); axis xy equal tight; colorbar;
-
                 
             else
                 wavefront = prop_multiply(wavefront, pad_crop(occ0, n_default, 'extrapval', occ(1, 1)));

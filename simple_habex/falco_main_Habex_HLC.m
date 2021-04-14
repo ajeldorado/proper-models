@@ -10,7 +10,6 @@
 %
 % Matlab's path must know the locations of 
 % - the Habex prescription 'habex_multi_coro.m'
-% - the PROPER library
 % - the FALCO package
 %
 % In falco_defaults_Habex_HLC.m, change the value of mp.full.map_dir to be
@@ -23,7 +22,6 @@ clear
 
 %--Required packages are FALCO and PROPER. 
 % Add FALCO to the MATLAB path with the command:  addpath(genpath(full_path_to_falco)); savepath;
-% Add PROPER to the MATLAB path with the command:  addpath(full_path_to_proper); savepath;
 
 %%--Output Data Directories (Comment these lines out to use defaults within falco-matlab/data/ directory.)
 % mp.path.config = ; %--Location of config files and minimal output files. Default is [mp.path.falco filesep 'data' filesep 'brief' filesep]
@@ -274,9 +272,6 @@ V0 = falco_fit_dm_surf(mp.dm1,surfaceToFit);
 figure(3); imagesc(V0); axis xy equal tight; colorbar; 
 
 % fitswrite(V0, [mp.full.map_dir, 'flat_map_hlc.fits'])
-
-return
-
 
 
 %% Step 4: Generate the label associated with this trial
