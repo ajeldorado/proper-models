@@ -1,9 +1,9 @@
-% Copyright 2018-2020, by the California Institute of Technology. ALL RIGHTS
+% Copyright 2018-2021, by the California Institute of Technology. ALL RIGHTS
 % RESERVED. United States Government Sponsorship acknowledged. Any
 % commercial use must be negotiated with the Office of Technology Transfer
 % at the California Institute of Technology.
 % -------------------------------------------------------------------------
-% %--Initialize some structures if they don't already exist
+% Initialize some structures if they don't already exist
 
 %% Misc
 
@@ -226,26 +226,6 @@ mp.full.use_errors = true;
 mp.full.dm1.flatmap = fitsread([mp.full.map_dir, 'flat_map.fits']);
 mp.full.dm2.flatmap = 0;
 
-% mp.full.zindex = 4;
-% mp.full.zval_m = 0.19e-9;
-% mp.full.use_hlc_dm_patterns = false; % whether to use design WFE maps for HLC.
-% mp.full.lambda0_m = mp.lambda0;
-% mp.full.input_field_rootname = '';	%   rootname of files containing aberrated pupil
-% mp.full.use_dm1 = 0;                %   use DM1? 1 or 0
-% mp.full.use_dm2 = 0;                %   use DM2? 1 or 0
-% mp.full.dm_sampling_m = 0.9906e-3;     %   actuator spacing in meters; default is 1 mm
-% mp.full.dm1_xc_act = 23.5;          %   for 48x48 DM, wavefront centered at actuator intersections: (0,0) = 1st actuator center
-% mp.full.dm1_yc_act = 23.5;
-% mp.full.dm1_xtilt_deg = 0;   		%   tilt around X axis
-% mp.full.dm1_ytilt_deg = 5.7;		%   effective DM tilt in deg including 9.65 deg actual tilt and pupil ellipticity
-% mp.full.dm1_ztilt_deg = 0;
-% mp.full.dm2_xc_act = 23.5;		
-% mp.full.dm2_yc_act = 23.5;
-% mp.full.dm2_xtilt_deg = 0;   
-% mp.full.dm2_ytilt_deg = 5.7;
-% mp.full.dm2_ztilt_deg = 0;
-% mp.full.use_fpm  = 1;
-
 
 %% Mask Definitions
 
@@ -254,29 +234,31 @@ mp.whichPupil = 'simple';
 mp.P1.IDnorm = 0.00; %--ID of the central obscuration [diameter]. Used only for computing the RMS DM surface from the ID to the OD of the pupil. OD is assumed to be 1.
 mp.P1.ODnorm = 1.00;% Outer diameter of the telescope [diameter]
 mp.P1.D = 4.0; %--telescope diameter [meters]. Used only for converting milliarcseconds to lambda0/D or vice-versa.
-mp.P1.Nstrut = 0;
-mp.P1.angStrut = [];
-mp.P1.wStrut = 0;
-mp.P1.stretch = 1;
 
-%--Lyot stop padding
-mp.P4.IDnorm = 0; %--Lyot stop ID [Dtelescope]
-mp.P4.ODnorm = 0.95; %--Lyot stop OD [Dtelescope]
-mp.P4.padFacPct = 0;
-mp.P4.Nstrut = 0;
-mp.P4.angStrut = [];
-mp.P4.wStrut = 0;
-mp.P4.stretch = 1;
+clear inputs
+inputs.ID = mp.P1.IDnorm ; % [pupil diameters]
+inputs.OD = mp.P1.ODnorm; % [pupil diameters]
+inputs.Nbeam = mp.P1.compact.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P1.compact.Nbeam));
+mp.P1.compact.mask = falco_gen_pupil_Simple(inputs); 
 
-%--Whether to generate or load various masks: compact model
-% mp.dm1.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm1wfe.fits']);
-% mp.dm2.wfe = fitsread([mp.full.data_dir 'hlc_20190210/' 'run461_dm2wfe.fits']);
+
+%% Lyot stop (P4) Definition and Generation
+mp.P4.IDnorm = 0;
+mp.P4.ODnorm = 0.95;
+
+clear inputs
+inputs.ID = mp.P4.IDnorm ; % [pupil diameters]
+inputs.OD = mp.P4.ODnorm; % [pupil diameters]
+inputs.Nbeam = mp.P4.compact.Nbeam;
+inputs.Npad = 2^(nextpow2(mp.P4.compact.Nbeam));
+mp.P4.compact.mask = falco_gen_pupil_Simple(inputs); 
+
 
 %% VC-Specific Values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 mp.F3.VortexCharge = 6; %--Charge of the vortex mask
 
-%%
-%-- Values for PROPER
+% Mask values for PROPER model
 mp.full.normLyotDiam = mp.P4.ODnorm;
 mp.full.vortexCharge = mp.F3.VortexCharge;
