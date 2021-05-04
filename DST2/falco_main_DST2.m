@@ -169,9 +169,11 @@ mp.runLabel = ['Series',num2str(mp.SeriesNum,'%04d'),'_Trial',num2str(mp.TrialNu
 
 %% Step 5: Perform the Wavefront Sensing and Control
 
+mp.P1.compact.mask = ones(mp.full.gridsize,mp.full.gridsize);
+
 [mp, out] = falco_flesh_out_workspace(mp);
 
-mp.P1.compact.mask = ones(size(mp.P1.compact.mask));
+% mp.P1.compact.mask = ones(size(mp.P1.compact.mask));
 
 [mp, out] = falco_wfsc_loop(mp, out);
 
