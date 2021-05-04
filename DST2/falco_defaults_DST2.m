@@ -163,7 +163,7 @@ mp.dm2.Dstop = mp.dm2.Nact*mp.dm1.dm_spacing;   %--Diameter of iris [meters]
 
 %--DM separations
 mp.d_P2_dm1 = 0;        % distance (along +z axis) from P2 pupil to DM1 [meters]
-        mp.d_dm1_dm2 = 0.30;   % distance between DM1 and DM2 [meters]
+mp.d_dm1_dm2 = 0.30;   % distance between DM1 and DM2 [meters]
 
 
 %% Optical Layout: All models
@@ -197,7 +197,7 @@ mp.Fend.sides = 'lr'; %--Which side(s) for correction: 'left', 'right', 'top', '
 mp.fl = 1; %--[meters] Focal length value used for all FTs in the compact model. Don't need different values since this is a Fourier model.
 
 %--Pupil Plane Diameters
-        mp.P2.D = 0.0185; %% wavefront.dx * #pix_across_pupil / n_act  (pull this from right before DM1 in the PROP model)
+mp.P2.D = 0.0185; %% wavefront.dx * #pix_across_pupil / n_act  (pull this from right before DM1 in the PROP model)
 mp.P3.D = mp.P2.D;
 mp.P4.D = mp.P2.D;
 
