@@ -277,6 +277,11 @@ mp.P1.angStrut = [];
 mp.P1.wStrut = 0;
 mp.P1.stretch = 1;
 
+
+
+
+
+
 %--Lyot stop padding
 mp.P4.IDnorm = 0; %--Lyot stop ID [Dtelescope]
 mp.P4.ODnorm = 0.95; %--Lyot stop OD [Dtelescope]
