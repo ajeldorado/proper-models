@@ -8,7 +8,7 @@
 % %% This use the defaults code for the DST 2 PROPER and FALCO models
 
 %% Directory containing optical surface error maps
-mp.full.map_dir = '/Users/ajriggs/Desktop/DST2/OAP_FITS/';
+mp.full.map_dir = '/Users/ajriggs/Data/dst2/DST2_FITS/';
 
 %% Misc
 

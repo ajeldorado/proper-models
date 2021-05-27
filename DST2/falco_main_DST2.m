@@ -20,20 +20,20 @@
 
 clear
 
-%% Step 1: Define Necessary Paths on Your Computer System
+%% Define Necessary Paths on Your Computer System
 
 %--Required packages are FALCO and PROPER. 
 % Add FALCO to the MATLAB path with the command:  addpath(genpath(full_path_to_falco)); savepath;
 
-% path_to_this_file = fileparts(mfilename('fullpath'));
-% addpath(path_to_this_file)
+% Add path to DM quilting maps
+path_to_this_file = fileparts(mfilename('fullpath'));
+addpath([path_to_this_file filesep 'quilting'])
 
-%% Step 2: Load default model parameters
+%% Load default model parameters
 
 falco_defaults_DST2
 
-
-%% Step 3: Overwrite default values as desired
+%% Overwrite default values as desired
 
 %%--Special Computational Settings
 mp.flagParfor = true; %--whether to use parfor for Jacobian calculation
@@ -41,7 +41,7 @@ mp.flagPlot = true;
 
 %--Record Keeping
 mp.SeriesNum = 1;
-mp.TrialNum = 1;
+mp.TrialNum = 0;
 
 %--DEBUGGING (with just 1 wavelength)
 mp.fracBW = 0.01;       %--fractional bandwidth of the whole bandpass (Delta lambda / lambda0)
@@ -49,7 +49,14 @@ mp.Nsbp = 1;            %--Number of sub-bandpasses to divide the whole bandpass
 mp.flagParfor = false; %--whether to use parfor for Jacobian calculation
 
 
-%% Step 4: Obtain DM1 Commands to Flatten the Wavefront Prior to WFSC
+%% Generate the DM quilting maps at the current sampling and DM registrations
+
+mp.runLabel = '_'; % temporary definition
+[mp, ~] = falco_flesh_out_workspace(mp); % need to run this to fill out mp.dm1 and mp.dm2
+gen_quilting_map_for_proper(mp); % no direct output--writes DM maps to files 
+
+
+%% Obtain DM1 Commands to Flatten the Wavefront Prior to WFSC
 % Run this section, on its own, if the OAP/DM surface data changes at
 % all. Only needs to be run once to generate the correct flats_map.fits
 
@@ -82,17 +89,17 @@ mp.dm1.dx_inf0 = mp.dm1.dm_spacing / 10;
 mp.dm1.dx = mp.P2.D/mp.P1.full.Nbeam; %mp.P2.D/mp.P2.compact.Nbeam;
 mp.dm1.centering = 'pixel';
 
-V0 = falco_fit_dm_surf(mp.dm1, surfaceToFit);
-figure(4); imagesc(V0); axis xy equal tight; colorbar; drawnow;
+flatMapMeters = falco_fit_dm_surf(mp.dm1, surfaceToFit);
+figure(4); imagesc(flatMapMeters); axis xy equal tight; colorbar; drawnow;
 
-fitswrite(V0, [mp.full.map_dir filesep 'flat_map.fits'])
+fitswrite(flatMapMeters, [mp.full.map_dir filesep 'flat_map.fits'])
 
 
 %% 
-mp.full.dm1.flatmap = V0; %fitsread([mp.full.map_dir filesep 'flat_map.fits']);
+mp.full.dm1.flatmap = flatMapMeters; %fitsread([mp.full.map_dir filesep 'flat_map.fits']);
 mp.full.dm2.flatmap = 0;
 
-%% Step 5: Obtain the phase retrieval phase with the flattened pupil phase.
+%% Obtain the phase retrieval phase with the flattened pupil phase.
 
 optval = mp.full;
 optval.use_pr = true;
@@ -104,7 +111,7 @@ optval.pr_pupil_diam_pix = mp.P1.compact.Nbeam;
 optval.xoffset = 0; 
 optval.yoffset = 0;
 optval.use_dm1 = true;
-optval.dm1 = V0; %fitsread([optval.map_dir, 'flat_map.fits']); % Be sure the location to this is set properly in defaults code.
+optval.dm1 = flatMapMeters; %fitsread([optval.map_dir, 'flat_map.fits']); % Be sure the location to this is set properly in defaults code.
 optval.dm2 = zeros(50, 50);
 
 nout = mp.P1.full.Narr;     % nout > pupil_diam_pix
@@ -137,7 +144,7 @@ for si=1:mp.Nsbp
 end
 
 
-%% Step 6: Generate the label associated with this trial
+%% Generate the label associated with this trial
 
 mp.runLabel = ['Series',num2str(mp.SeriesNum,'%04d'),'_Trial',num2str(mp.TrialNum,'%04d_'),...
     mp.coro,'_',mp.whichPupil,'_',num2str(numel(mp.dm_ind)),'DM',num2str(mp.dm1.Nact),'_z',num2str(mp.d_dm1_dm2),...
@@ -146,7 +153,7 @@ mp.runLabel = ['Series',num2str(mp.SeriesNum,'%04d'),'_Trial',num2str(mp.TrialNu
     '_',mp.controller];
 
 
-%% Step 7: Perform the Wavefront Sensing and Control
+%% Perform the Wavefront Sensing and Control
 
 [mp, out] = falco_flesh_out_workspace(mp);
 
@@ -155,9 +162,10 @@ mp.P1.compact.mask = ones(size(mp.P1.compact.mask));
 [mp, out] = falco_wfsc_loop(mp, out);
 
 
-%% %% Step 8: Contrast Curve Code
-%  %% This messy section takes the output of the entire simulation and
-%  %% generates a contrast curve. It takes a little while, so be patient. 
+
+%% Contrast Curve Calculation
+% This section takes the output of the entire simulation and
+% generates a contrast curve. It takes a little while, so be patient. 
 
 beam_ratio = mp.full.pupil_diam_pix/mp.full.gridsize;
 

@@ -1,8 +1,12 @@
+
 ##
 wfirst_cgi/models_phaseb/DoesNotSync/**
 wfirst_cgi/models_phaseb/python/wfirst_phaseb_proper.egg-info/**
 wfirst_cgi/models_phaseb/python/build/lib/**
 wfirst_cgi/models_phaseb/python/dist/**
+
+## ZIP files
+*.zip
 
 ## Compiled python
 *.pyc
@@ -15,6 +19,7 @@ wfirst_cgi/models_phaseb/python/dist/**
 !wfirst_cgi/models_phaseb/python/wfirst_phaseb_proper/examples/*.fits
 !wfirst_cgi/models_phaseb/idl/examples/*.fits
 
+!DST2/quilting/single_act_surface_in_m_bmc_2k_100pixperact.fits
 
 #!wfirst_cgi/dm1_flatten*.fits
 #!wfirst_cgi/data_phaseb/pol/new_toma_amp.fits
