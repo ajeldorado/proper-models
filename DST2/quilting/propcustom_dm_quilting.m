@@ -234,17 +234,19 @@ function [bm, map] = propcustom_dm_quilting(bm, dmz0, dmcx, dmcy, spcg, varargin
   
 	% Convolve with a window in order to avoid aliasing of the quilting
     mag = ifdx / bm.dx;
-    dxIn = 1.0;
-    dxOut = 1.0 / mag;
-    nMaskIn = ceil_odd(2 / mag);
-    x0 = (-(nMaskIn-1.)/2.:(nMaskIn)/2.)*dxIn;
-    [X0, Y0] = meshgrid(x0, x0);
-    R0 = sqrt(X0.^2 + Y0.^2); clear X0 Y0
-    Window = 0*R0;
-    Window(R0 <= dxOut/2.) = 1;
-    Window = Window/sum(Window(:));
-    dmg  = conv2(dmg, Window, 'same');
-
+    if mag < 1
+        dxIn = 1.0;
+        dxOut = 1.0 / mag;
+        nMaskIn = ceil_odd(2 / mag);
+        x0 = (-(nMaskIn-1.)/2.:(nMaskIn-1)/2.)*dxIn;
+        [X0, Y0] = meshgrid(x0, x0);
+        R0 = sqrt(X0.^2 + Y0.^2); clear X0 Y0
+        Window = 0*R0;
+        Window(R0 <= dxOut/2.) = 1;
+        Window = Window/sum(Window(:));
+        dmg  = conv2(dmg, Window, 'same');
+    end
+    
   [ny, nx] = size(bm.wf);       % number of points in wavefront array
 
 % 3D rotate DM grid and project orthogonally onto wavefront
