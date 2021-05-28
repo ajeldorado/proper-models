@@ -225,7 +225,7 @@ mp.full.field_stop_radius = mp.Fend.corr.Rout;   %-- field stop radius in lam0/D
 
 % %--Pupil Plane Resolutions
 mp.full.gridsize = 2048;
-mp.P1.full.Nbeam = 500;
+mp.P1.full.Nbeam = 700;
 mp.P1.full.Narr = 2^nextpow2(mp.P1.full.Nbeam);
 mp.full.lambda0_um = mp.lambda0*1e6;	%-- default reference wavelength (center of bandpass) for star offsets & field stop size
 mp.full.pupil_diam_pix = mp.P1.full.Nbeam;
