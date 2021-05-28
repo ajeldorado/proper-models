@@ -68,18 +68,18 @@ function [] = gen_quilting_map_for_proper(mp)
     fits.writeKey(fptrDM, 'PIXSIZE', dx, 'meters per pixel');
     fits.closeFile(fptrDM);
 
-    % Visually check that the fake satellite spots from aliasing are gone:
-    padFac = 8;
-    dm1Surf = dm1Surf - mean(dm1Surf(:));
-    window1D = tukeywindow(Narray, 0.4);
-    window2D = window1D * window1D.';
-    dm1SurfWindowed = dm1Surf .* window2D;
-    dmSurfPad = pad_crop(dm1SurfWindowed, padFac*mp.P1.full.Nbeam);
-    Efoc = fftshift(fft2(ifftshift(dmSurfPad)));
-    Ifoc = abs(Efoc).^2;
-    Ifoc = Ifoc/max(Ifoc(:));
-    figure(14); imagesc(log10(Ifoc), [-9, 0]); axis xy equal tight; colorbar;  drawnow;
-    figure(15); imagesc(dm1SurfWindowed); axis xy equal tight; colorbar; drawnow;
-    disp('');
+%     % Visually check that the fake satellite spots from aliasing are gone:
+%     padFac = 8;
+%     dm1Surf = dm1Surf - mean(dm1Surf(:));
+%     window1D = tukeywindow(Narray, 0.4);
+%     window2D = window1D * window1D.';
+%     dm1SurfWindowed = dm1Surf .* window2D;
+%     dmSurfPad = pad_crop(dm1SurfWindowed, padFac*mp.P1.full.Nbeam);
+%     Efoc = fftshift(fft2(ifftshift(dmSurfPad)));
+%     Ifoc = abs(Efoc).^2;
+%     Ifoc = Ifoc/max(Ifoc(:));
+%     figure(14); imagesc(log10(Ifoc), [-9, 0]); axis xy equal tight; colorbar;  drawnow;
+%     figure(15); imagesc(dm1SurfWindowed); axis xy equal tight; colorbar; drawnow;
+%     disp('');
 
 end
