@@ -113,17 +113,17 @@ wavefront = prop_propagate(wavefront, d_OAP1_ReflPupil+d_ReflPupil_OAP2);
 if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP2_2-WFE.fits'], 'WAVEFRONT'); end
 wavefront = prop_lens(wavefront, f_OAP2);           
 
-wavefront = prop_propagate(wavefront, f_OAP2+f_OAP3); 
+wavefront = prop_propagate(wavefront, f_OAP2+f_OAP3);
 if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP3_1-WFE.fits'], 'WAVEFRONT'); end 
 wavefront = prop_lens(wavefront, f_OAP3);
 
 wavefront = prop_propagate(wavefront, d_OAP3_DM1); 
 if use_dm1; wavefront = propcustom_dm(wavefront, dm1, dm_xc, dm_yc, dm_sampling, 'inf_file', 'influence_BMC_2kDM_400micron_res10.fits'); end
-if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'BMC50_DM_WFE.fits'], 'wavefront'); end
+if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'dm1_surface_quilting.fits']); end
 
 wavefront = prop_propagate(wavefront, d_DM1_DM2);
 if use_dm2;  wavefront = propcustom_dm(wavefront, dm2, dm_xc, dm_yc, dm_sampling, 'inf_file', 'influence_BMC_2kDM_400micron_res10.fits'); end
-if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'BMC50_DM_WFE.fits'], 'wavefront'); end
+if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'dm2_surface_quilting.fits'], 'surface'); end
 
 wavefront = prop_propagate(wavefront, d_DM2_OAP4);  
 if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP4_1-WFE.fits'], 'WAVEFRONT'); end 
