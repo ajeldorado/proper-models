@@ -68,7 +68,7 @@ pupil_ratio = pupil_diam_pix / double(gridsize);
 
 %% Optical prescription. Units of meters.
 
-f_OAP1 = 0.1540536;                       
+f_OAP1 = 01.540536;                       
 d_OAP1_ReflPupil = 0.733464;       % 1st Pupil Plane
 d_ReflPupil_OAP2 = 0.638094;           
 f_OAP2 = 0.774577;

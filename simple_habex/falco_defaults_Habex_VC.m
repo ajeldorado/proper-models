@@ -206,7 +206,7 @@ mp.NrelayFend = 0; %--How many times to rotate the final image by 180 degrees
 mp.full.flagPROPER = true; %--Whether the full model is a PROPER prescription
 mp.full.prescription = 'habex';
 mp.full.cor_type = 'vortex'; 
-mp.full.map_dir = '/Users/ajriggs/Documents/habex/maps/';	%-- directory containing optical surface error maps
+mp.full.map_dir = 'C:\Users\matnoyes\Documents\Projects\HCIT_Camilo\DST2\DST2_PROPER_Models\maps\';	%-- directory containing optical surface error maps
 mp.full.gridsize = 1024; % # of points across in PROPER model 
 
 %--Focal planes

@@ -28,6 +28,9 @@ clear
 % path_to_this_file = fileparts(mfilename('fullpath'));
 % addpath(path_to_this_file)
 
+addpath(genpath('C:\Users\matnoyes\Documents\GitHub\falco-matlab'));
+addpath(genpath('C:\Users\matnoyes\Documents\Projects\HCIT_Camilo\DST2\Maps\OAP_FITS_fixed'));
+
 %% Step 2: Load default model parameters
 
 falco_defaults_DST2
