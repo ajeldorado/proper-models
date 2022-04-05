@@ -10,19 +10,22 @@
 function [wavefront, sampling_m] = DST2(lambda_m, gridsize, optval)
 
 % Path to the mirror surface maps
-map_dir = './DST2_FITS/';
+map_dir = './dst2_fits_rev_b/';
 
 % Model Switches
 xoffset = false; % Introduces wavefront tilt that shifts focus in units of lam0/d
 yoffset = false; % Introduces wavefront tilt that shifts focus in units of lam0/d
 use_errors = true; % Switches the use of error maps on optical surfaces
 use_dm_errors = false;
-use_fpm = true; % Swithces the use of the Focal Plane Mask
+use_fpm = true; % Switches the use of the Focal Plane Mask
+use_pinhole = false; % Switches the use of a pinhole at the FPM
+pinhole_diam = 0.5; % pinhole diameter in units of lam0/d
 use_lyot_stop  = true; % Switches the use of the LYOT Stop
 use_field_stop = true; % Switches the use of the Field Stop
-use_pr = false; % End propagation at the pupil before the FPM
 use_dm1 = false;
 use_dm2 = false;
+use_pr = false; % End propagation at the pupil before the FPM
+which_pupil = 'exit'; % 'pre-FPM' or 'exit'
 
 % System Variables
 dm_xc = 24.5;              % Wavefront centered at corner of DM actuator (0,0 is center of 1st actuator)
@@ -50,6 +53,8 @@ if exist('optval', 'var') == 1
     if isfield(optval, 'use_errors');            use_errors = optval.use_errors;  end
     if isfield(optval, 'use_dm_errors');         use_dm_errors = optval.use_dm_errors;  end
     if isfield(optval, 'use_fpm');               use_fpm = optval.use_fpm;  end
+    if isfield(optval, 'use_pinhole');           use_pinhole = optval.use_pinhole;  end
+    if isfield(optval, 'pinhole_diam');          pinhole_diam = optval.pinhole_diam;  end
     if isfield(optval, 'use_lyot_stop');         use_lyot_stop = optval.use_lyot_stop;  end
     if isfield(optval, 'use_field_stop');        use_field_stop = optval.use_field_stop;  end
     if isfield(optval, 'field_stop_radius');     field_stop_radius = optval.field_stop_radius;  end
@@ -59,8 +64,9 @@ if exist('optval', 'var') == 1
     if isfield(optval, 'vortexCharge');          vortexCharge = optval.vortexCharge;  end
     if isfield(optval, 'map_dir');               map_dir = optval.map_dir;  end
     if isfield(optval, 'pupil_diam_pix');        pupil_diam_pix = optval.pupil_diam_pix;  end
-    if isfield(optval, 'pr_pupil_diam_pix');      pr_pupil_diam_pix = optval.pr_pupil_diam_pix;  end
+    if isfield(optval, 'pr_pupil_diam_pix');     pr_pupil_diam_pix = optval.pr_pupil_diam_pix;  end
     if isfield(optval, 'use_pr');                use_pr = optval.use_pr;  end
+    if isfield(optval, 'which_pupil');           which_pupil = optval.which_pupil;  end    
 end
 
 pupil_ratio = pupil_diam_pix / double(gridsize);
@@ -123,14 +129,48 @@ if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'dm1_sur
 
 wavefront = prop_propagate(wavefront, d_DM1_DM2);
 if use_dm2;  wavefront = propcustom_dm(wavefront, dm2, dm_xc, dm_yc, dm_sampling, 'inf_file', 'influence_BMC_2kDM_400micron_res10.fits'); end
-if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'dm2_surface_quilting.fits'], 'surface'); end
+if use_dm_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'dm2_surface_quilting.fits']); end
 
 wavefront = prop_propagate(wavefront, d_DM2_OAP4);  
 if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP4_1-WFE.fits'], 'WAVEFRONT'); end 
-wavefront = prop_lens(wavefront, f_OAP4);        
 
+% Get E-field at the pre-FPM pupil and then stop
+if use_pr && strcmpi(which_pupil, 'pre-fpm')
+         
+    wavefront = prop_propagate(wavefront, -(d_DM1_DM2+d_DM2_OAP4)); % back propagate to pupil
+    Epup = ifftshift(wavefront.wf);
+
+    mag = pr_pupil_diam_pix / pupil_diam_pix;
+    wavefront = prop_magnify(Epup, mag, 'SIZE_OUT', 2*ceil(0.5*mag*gridsize), 'AMP_CONSERVE');
+    sampling_m = 0; % dummy value needed as output
+    
+    return
+end
+
+
+wavefront = prop_lens(wavefront, f_OAP4);
+dx = wavefront.dx;
 wavefront = prop_propagate(wavefront, f_OAP4);
-if use_fpm
+if use_pinhole
+    % Generate pinhole
+    pinhole_diam = 0.5;
+    pixPerLamD = 20 * (lambda0_m / lambda_m);
+    inputs.pixresFPM = pixPerLamD;
+    inputs.rhoInner = pinhole_diam/2;
+    inputs.rhoOuter = Inf;
+    pinhole = 1 - falco_gen_annular_FPM(inputs);
+    fl = 1;
+    dxi = 1/pixPerLamD;
+    deta = 1/pixPerLamD;
+    Nxi = size(pinhole, 2);
+    Neta = size(pinhole, 1);
+
+    EpupPre = ifftshift(ifft2(wavefront.wf)); % wavefront.wf is already fftshifted
+    Efoc = propcustom_mft_PtoF(EpupPre, fl, lambda_m, dx, dxi, Nxi, deta, Neta);
+    EpupPre = propcustom_mft_FtoP(pinhole.*Efoc, fl, lambda_m, dxi, deta, dx, gridsize);
+    wavefront.wf = fft2(fftshift(EpupPre))/gridsize^2;
+
+elseif use_fpm
     apRad = pupil_diam_pix/2.;
     useGPU = false;
     inVal = 1;      % found empirically in lamd/D
@@ -163,29 +203,28 @@ if use_field_stop
 end   
 
 wavefront = prop_propagate(wavefront, f_OAP7); 
-if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP7_2-WFE.fits'], 'WAVEFRONT'); end 
+if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP7_3-WFE.fits'], 'WAVEFRONT'); end 
 wavefront = prop_lens(wavefront, f_OAP7);
 
 wavefront = prop_propagate(wavefront, d_OAP7_pupilBeforeDetector+d_pupilBeforeDetector_OAP8);
 if use_errors; wavefront = prop_errormap(wavefront, [map_dir filesep 'OAP8_2-WFE.fits'], 'WAVEFRONT'); end 
 
-if use_pr == false
-
-    wavefront = prop_lens(wavefront, f_OAP8);
-
-    wavefront = prop_propagate(wavefront, f_OAP8);
-    [wavefront, sampling_m] = prop_end(wavefront, 'noabs');
-    mag = (pupil_ratio / final_sampling_lam0) * (lambda_m / lambda0_m);
-    wavefront = prop_magnify(wavefront, mag, 'SIZE_OUT', nout, 'AMP_CONSERVE');
-
- else % Get E-field at the final pupil (including aberrations from all optics)
-     
+if use_pr % Get E-field at the final pupil (including aberrations from all optics)
+         
     wavefront = prop_propagate(wavefront, -d_pupilBeforeDetector_OAP8); % back propagate to pupil
     Epup = ifftshift(wavefront.wf);
 
     mag = pr_pupil_diam_pix / pupil_diam_pix;
     wavefront = prop_magnify(Epup, mag, 'SIZE_OUT', 2*ceil(0.5*mag*gridsize), 'AMP_CONSERVE');
     sampling_m = 0; % dummy value needed as output
+    
+else
+
+    wavefront = prop_lens(wavefront, f_OAP8);
+    wavefront = prop_propagate(wavefront, f_OAP8);
+    [wavefront, sampling_m] = prop_end(wavefront, 'noabs');
+    mag = (pupil_ratio / final_sampling_lam0) * (lambda_m / lambda0_m);
+    wavefront = prop_magnify(wavefront, mag, 'SIZE_OUT', nout, 'AMP_CONSERVE');
     
 end
 
