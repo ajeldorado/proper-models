@@ -8,13 +8,13 @@
 %
 % Matlab's path must know the locations of 
 % - The DST2 Prescription Code:   'DST2.m'
-% - The DST2 Falco Defaults Code: 'falco_defaults_DST2.m'
+% - The DST2 Falco Defaults Code: 'falco_config_DST2.m'
 % - Polar Transform Code:         'polarTransform.m' (optional)
 % - The FALCO Package Directory:
 % - The OAP and DM surface files
 %       - 'OAP#_#-WFE.fits'
 %
-% In falco_defaults_DST2.m, change the value of mp.full.map_dir to be
+% In falco_config_DST2.m, change the value of mp.full.map_dir to be
 % correct for your computer.
 % -------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ clear
 
 %--Required packages are FALCO and PROPER. 
 % Add FALCO to the MATLAB path with the command:  addpath(genpath(full_path_to_falco)); savepath;
+% PROPER is included inside the FALCO distribution.
 
 % path_to_this_file = fileparts(mfilename('fullpath'));
 % addpath(path_to_this_file)
@@ -33,7 +34,7 @@ addpath(genpath('C:\Users\matnoyes\Documents\Projects\HCIT_Camilo\DST2\Maps\OAP_
 
 %% Step 2: Load default model parameters
 
-falco_defaults_DST2
+falco_config_DST2
 
 
 %% Step 3: Overwrite default values as desired

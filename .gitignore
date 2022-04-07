@@ -20,6 +20,9 @@ wfirst_cgi/models_phaseb/python/dist/**
 !wfirst_cgi/models_phaseb/idl/examples/*.fits
 
 !DST2/quilting/single_act_surface_in_m_bmc_2k_100pixperact.fits
+!DST2/FITS/OAP*.fits
+# !DST2/FITS/BMC50_DM_WFE.fits
+
 
 #!wfirst_cgi/dm1_flatten*.fits
 #!wfirst_cgi/data_phaseb/pol/new_toma_amp.fits
