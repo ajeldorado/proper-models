@@ -1,1 +1,2 @@
-To run the PROPER prescription DST2.m, you must first download and unzip the FITS files available at http://astro.caltech.edu/~gruane/DST2_FITS.zip. Then, update the variable mp.full.map_dir in falco_defaults_DST2.m to be the absolute path to that folder of FITS files.
+To run the PROPER prescription DST2.m, you need the FITS files of the DST2 error maps included in the repo. In order for the actual FITS files to download instead of their placeholders, you must have Git LFS installed. If you don't already, you can type this at a terminal command line on Linux or Mac:
+git lfs install
